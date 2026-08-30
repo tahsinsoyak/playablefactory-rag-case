@@ -11,14 +11,18 @@ export default async function DashboardPage() {
 
   return (
     <AppShell user={user} active="dashboard">
-      <div className="mb-6">
-        <h1 className="text-xl font-semibold tracking-tight sm:text-2xl">Dashboard</h1>
-        <p className="mt-1 text-sm text-ink-muted">
+      <div className="py-6 sm:py-8">
+        <h1 className="text-[24px] leading-tight font-semibold tracking-[-0.01em] text-ink sm:text-[28px]">
+          Dashboard
+        </h1>
+        <p className="mt-1.5 text-[15px] text-ink-muted">
           Corpus contents, ingestion history, index health, and search analytics.
         </p>
-      </div>
 
-      <Dashboard currentUserId={user.id} />
+        <div className="mt-8">
+          <Dashboard currentUserId={user.id} />
+        </div>
+      </div>
     </AppShell>
   );
 }

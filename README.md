@@ -10,18 +10,21 @@ including where it was wrong.
 
 ## What it does
 
-| Surface        | Who                  | What it does                                                                              |
-| -------------- | -------------------- | ----------------------------------------------------------------------------------------- |
-| **Chat**       | any signed-in user   | ask in natural language, see the retrieved passages, get a grounded answer with citations |
-| **Dashboard**  | admins only          | indexed documents, ingestion history, index health, search analytics, run ingestion       |
-| **MCP server** | external MCP clients | the same search, exposed as a callable tool                                               |
+| Surface        | Who                  | What it does                                                                             |
+| -------------- | -------------------- | ---------------------------------------------------------------------------------------- |
+| **Chat**       | any signed-in user   | a conversation: ask, get a grounded answer with citations, expand the passages behind it |
+| **Dashboard**  | admins only          | indexed documents, ingestion history, index health, search analytics, run ingestion      |
+| **MCP server** | external MCP clients | the same search, exposed as a callable tool                                              |
 
 Main features:
 
 - **Hybrid retrieval** — semantic (vector) and keyword (BM25) search fused with Reciprocal
   Rank Fusion. Measured: it puts the expected document first on every sample question,
   where each half alone sometimes does not.
-- **Grounded answers with citations** back to source documents, streamed token by token.
+- **Grounded answers with citations** back to source documents, streamed token by token, in a
+  conversation you can scroll back through. Citation markers are clickable and reveal the
+  exact passage they came from, with its similarity score and per-strategy ranks — retrieval
+  is inspectable rather than a black box.
 - **Honest refusal.** When nothing relevant is retrieved, the system says so and cites
   nothing, rather than assembling something plausible from unrelated passages.
 - **Incremental ingestion.** Re-running ingestion detects new, changed, and deleted

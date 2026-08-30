@@ -2,8 +2,11 @@
 
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Suspense, useState } from 'react';
-import { apiFetch, ApiRequestError } from '@/lib/api';
 import type { LoginResponse } from '@corpus/shared';
+import { apiFetch, ApiRequestError } from '@/lib/api';
+import { Alert } from '@/components/ui/Alert';
+import { Button } from '@/components/ui/Button';
+import { Field } from '@/components/ui/Field';
 
 function LoginForm() {
   const router = useRouter();
@@ -44,76 +47,90 @@ function LoginForm() {
 
   return (
     <form onSubmit={submit} className="space-y-4" noValidate>
-      <div>
-        <label htmlFor="email" className="block text-sm font-medium">
-          Email
-        </label>
-        <input
-          id="email"
-          type="email"
-          autoComplete="username"
-          required
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          className="mt-1.5 w-full rounded-md border border-border bg-surface px-3 py-2 text-base outline-none focus:border-accent focus:ring-2 focus:ring-accent/30"
-        />
-      </div>
+      <Field
+        id="email"
+        label="Email"
+        type="email"
+        autoComplete="username"
+        required
+        value={email}
+        onChange={(e) => setEmail(e.target.value)}
+      />
 
-      <div>
-        <label htmlFor="password" className="block text-sm font-medium">
-          Password
-        </label>
-        <input
-          id="password"
-          type="password"
-          autoComplete="current-password"
-          required
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          className="mt-1.5 w-full rounded-md border border-border bg-surface px-3 py-2 text-base outline-none focus:border-accent focus:ring-2 focus:ring-accent/30"
-        />
-      </div>
+      <Field
+        id="password"
+        label="Password"
+        type="password"
+        autoComplete="current-password"
+        required
+        value={password}
+        onChange={(e) => setPassword(e.target.value)}
+      />
 
-      {error && (
-        <p
-          role="alert"
-          className="rounded-md bg-red-500/10 px-3 py-2 text-sm text-red-600 dark:text-red-400"
-        >
-          {error}
-        </p>
-      )}
+      {error && <Alert>{error}</Alert>}
 
-      <button
-        type="submit"
-        disabled={busy}
-        className="w-full rounded-md bg-accent px-4 py-2.5 text-sm font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-50"
-      >
-        {busy ? 'Signing in…' : 'Sign in'}
-      </button>
+      <Button type="submit" loading={busy} className="w-full">
+        Sign in
+      </Button>
     </form>
+  );
+}
+
+/** Fills the same space as the form, so the card does not resize on hydration. */
+function FormSkeleton() {
+  return (
+    <div className="space-y-4" aria-hidden>
+      {[0, 1].map((i) => (
+        <div key={i}>
+          <div className="h-4 w-16 rounded bg-surface-sunken" />
+          <div className="mt-1.5 h-[42px] rounded-[8px] bg-surface-sunken" />
+        </div>
+      ))}
+      <div className="h-10 rounded-[8px] bg-surface-sunken" />
+    </div>
   );
 }
 
 export default function LoginPage() {
   return (
     <div className="flex min-h-dvh items-center justify-center px-4 py-10">
-      <div className="w-full max-w-sm">
-        <h1 className="text-2xl font-semibold tracking-tight">Corpus Search</h1>
-        <p className="mt-1 text-sm text-ink-muted">
-          Sign in to search the internal document corpus.
-        </p>
+      <div className="w-full max-w-[380px]">
+        <div className="flex items-center gap-2.5">
+          <span
+            aria-hidden
+            className="grid size-9 place-items-center rounded-[9px] bg-accent text-[15px] font-bold text-accent-ink"
+          >
+            C
+          </span>
+          <div>
+            <h1 className="text-[19px] leading-tight font-semibold tracking-[-0.01em] text-ink">
+              Corpus Search
+            </h1>
+            <p className="text-[13px] text-ink-muted">Internal document search</p>
+          </div>
+        </div>
 
-        <div className="mt-6 rounded-xl border border-border bg-surface-raised p-5 sm:p-6">
+        <div className="mt-6 rounded-[10px] border border-border bg-surface-raised p-5 sm:p-6">
           {/* useSearchParams needs a Suspense boundary during prerender. */}
-          <Suspense fallback={<div className="h-64" />}>
+          <Suspense fallback={<FormSkeleton />}>
             <LoginForm />
           </Suspense>
         </div>
 
-        <div className="mt-4 rounded-lg border border-border/70 px-4 py-3 text-xs text-ink-muted">
-          <p className="font-medium text-ink">Demo accounts</p>
-          <p className="mt-1 font-mono">user@demo.local · demo-user-pw</p>
-          <p className="font-mono">admin@demo.local · demo-admin-pw</p>
+        <div className="mt-4 rounded-[10px] border border-dashed border-border px-4 py-3">
+          <p className="text-[12px] font-medium tracking-wide text-ink-subtle uppercase">
+            Demo accounts
+          </p>
+          <dl className="mt-2 space-y-1 text-[13px]">
+            <div className="flex justify-between gap-3">
+              <dt className="text-ink-muted">User</dt>
+              <dd className="font-mono text-[12px] text-ink">user@demo.local · demo-user-pw</dd>
+            </div>
+            <div className="flex justify-between gap-3">
+              <dt className="text-ink-muted">Admin</dt>
+              <dd className="font-mono text-[12px] text-ink">admin@demo.local · demo-admin-pw</dd>
+            </div>
+          </dl>
         </div>
       </div>
     </div>

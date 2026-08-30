@@ -1,28 +1,62 @@
 @import 'tailwindcss';
 
 /*
- * A small token set rather than raw colours scattered through components, and
- * defined for both schemes so the app follows the reader's system preference.
+ * Design tokens.
+ *
+ * One accent, used only for actions and citations, so a coloured thing on the
+ * page always means "you can act on this" or "this is a source". Everything else
+ * is carried by surface, border, and type weight — which is what keeps a dense
+ * tool readable as it grows.
+ *
+ * Both schemes are defined here rather than with `dark:` variants throughout, so
+ * a colour is never chosen twice and a component cannot be styled for one scheme
+ * and forgotten in the other.
  */
 @theme {
-  --color-surface: oklch(99% 0.004 260);
-  --color-surface-raised: oklch(100% 0 0);
-  --color-border: oklch(91% 0.006 260);
-  --color-ink: oklch(24% 0.02 260);
-  --color-ink-muted: oklch(52% 0.017 260);
-  --color-accent: oklch(55% 0.19 265);
-  --color-accent-soft: oklch(95% 0.03 265);
+  --color-surface: #fafafb;
+  --color-surface-raised: #ffffff;
+  --color-surface-sunken: #f2f3f6;
+  --color-border: #e4e5ea;
+  --color-border-strong: #d3d5dd;
+  --color-ink: #16181d;
+  --color-ink-muted: #646a79;
+  --color-ink-subtle: #8f95a3;
+  --color-accent: #4f46e5;
+  --color-accent-hover: #4338ca;
+  --color-accent-soft: #eef0ff;
+  --color-accent-ink: #ffffff;
+  --color-positive: #047857;
+  --color-warning: #b45309;
+  --color-warning-soft: #fffbeb;
+  --color-danger: #be123c;
+  --color-danger-soft: #fff1f2;
+
+  --radius-card: 10px;
+
+  --font-sans:
+    ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, monospace;
 }
 
 @media (prefers-color-scheme: dark) {
   @theme {
-    --color-surface: oklch(19% 0.015 260);
-    --color-surface-raised: oklch(23% 0.017 260);
-    --color-border: oklch(32% 0.02 260);
-    --color-ink: oklch(95% 0.008 260);
-    --color-ink-muted: oklch(70% 0.02 260);
-    --color-accent: oklch(72% 0.15 265);
-    --color-accent-soft: oklch(30% 0.06 265);
+    --color-surface: #16181d;
+    --color-surface-raised: #1d2026;
+    --color-surface-sunken: #121419;
+    --color-border: #2b2f37;
+    --color-border-strong: #3a3f4a;
+    --color-ink: #edeef2;
+    --color-ink-muted: #99a0af;
+    --color-ink-subtle: #6f7686;
+    --color-accent: #8b8cf7;
+    --color-accent-hover: #a0a1f9;
+    --color-accent-soft: #24273f;
+    --color-accent-ink: #14151f;
+    --color-positive: #34d399;
+    --color-warning: #fbbf24;
+    --color-warning-soft: #2a2214;
+    --color-danger: #fb7185;
+    --color-danger-soft: #2c1720;
   }
 }
 
@@ -33,14 +67,64 @@ html {
 body {
   background-color: var(--color-surface);
   color: var(--color-ink);
+  font-family: var(--font-sans);
+  /* Tabular figures everywhere: scores and counts should not jitter as they update. */
+  font-variant-numeric: tabular-nums;
+  -webkit-font-smoothing: antialiased;
 }
 
-/* Respect a reader who has asked for less motion. */
+/* A single visible focus treatment, so keyboard users get the same affordance
+   everywhere rather than whatever each element defaults to. */
+:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+@keyframes fade-rise {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.animate-fade-rise {
+  animation: fade-rise 0.22s ease-out both;
+}
+
+/* The block that trails streaming text, so it is visibly still arriving. */
+@keyframes caret-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.25;
+  }
+}
+
+.streaming-caret::after {
+  content: '';
+  display: inline-block;
+  width: 0.45em;
+  height: 1.05em;
+  margin-left: 0.12em;
+  vertical-align: text-bottom;
+  background-color: currentColor;
+  border-radius: 1px;
+  animation: caret-pulse 1s ease-in-out infinite;
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
   *::after {
     animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
   }
 }

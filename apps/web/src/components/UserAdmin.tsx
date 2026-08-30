@@ -3,6 +3,12 @@
 import { useCallback, useEffect, useState } from 'react';
 import type { PublicUser, Role } from '@corpus/shared';
 import { apiFetch, ApiRequestError } from '@/lib/api';
+import { cn } from '@/lib/cn';
+import { Alert } from './ui/Alert';
+import { Card } from './ui/Card';
+
+const TH = 'px-4 py-2.5 text-left text-[11px] font-medium tracking-wide text-ink-subtle uppercase';
+const TD = 'px-4 py-2.5 text-[13px] text-ink';
 
 /**
  * Admin user management.
@@ -52,48 +58,44 @@ export function UserAdmin({ currentUserId }: { currentUserId: string }) {
     }
   }
 
-  if (loading) return <p className="text-sm text-ink-muted">Loading users…</p>;
+  if (loading) return <Card className="h-24 animate-pulse bg-surface-sunken" aria-busy />;
 
   return (
     <section aria-label="User management">
-      <h2 className="text-sm font-semibold uppercase tracking-wide text-ink-muted">
+      <h2 className="text-[13px] font-semibold tracking-wide text-ink uppercase">
         Users ({users.length})
       </h2>
+      <p className="mt-0.5 text-[13px] text-ink-muted">
+        Admins can reach the dashboard and manage the corpus. You cannot change your own role.
+      </p>
 
-      {error && (
-        <p
-          role="alert"
-          className="mt-2 rounded-lg bg-red-500/10 px-4 py-3 text-sm text-red-600 dark:text-red-400"
-        >
-          {error}
-        </p>
-      )}
+      {error && <Alert className="mt-3">{error}</Alert>}
 
-      <div className="mt-2 overflow-x-auto rounded-xl border border-border bg-surface-raised">
-        <table className="w-full min-w-100 text-sm">
-          <thead className="border-b border-border text-left text-xs uppercase tracking-wide text-ink-muted">
+      <Card className="mt-3 overflow-x-auto">
+        <table className="w-full min-w-[420px]">
+          <thead className="border-b border-border">
             <tr>
-              <th className="px-4 py-2 font-medium">Email</th>
-              <th className="px-4 py-2 font-medium">Joined</th>
-              <th className="px-4 py-2 font-medium">Role</th>
+              <th className={TH}>Email</th>
+              <th className={TH}>Joined</th>
+              <th className={TH}>Role</th>
             </tr>
           </thead>
-          <tbody>
+          <tbody className="divide-y divide-border">
             {users.map((user) => {
               const isSelf = user.id === currentUserId;
 
               return (
-                <tr key={user.id} className="border-b border-border/60 last:border-0">
-                  <td className="px-4 py-2">
+                <tr key={user.id}>
+                  <td className={TD}>
                     {user.email}
-                    {isSelf && <span className="ml-2 text-xs text-ink-muted">(you)</span>}
+                    {isSelf && <span className="ml-2 text-[12px] text-ink-subtle">(you)</span>}
                   </td>
-                  <td className="whitespace-nowrap px-4 py-2 text-ink-muted">
+                  <td className={cn(TD, 'whitespace-nowrap text-ink-muted')}>
                     {new Date(user.createdAt).toLocaleDateString(undefined, {
                       dateStyle: 'medium',
                     })}
                   </td>
-                  <td className="px-4 py-2">
+                  <td className={TD}>
                     <label className="sr-only" htmlFor={`role-${user.id}`}>
                       Role for {user.email}
                     </label>
@@ -103,7 +105,7 @@ export function UserAdmin({ currentUserId }: { currentUserId: string }) {
                       disabled={isSelf || pendingId === user.id}
                       onChange={(e) => void changeRole(user.id, e.target.value as Role)}
                       title={isSelf ? 'You cannot change your own role' : undefined}
-                      className="rounded-md border border-border bg-surface px-2 py-1 text-sm outline-none focus:border-accent disabled:opacity-60"
+                      className="rounded-[7px] border border-border bg-surface px-2 py-1 text-[13px] text-ink outline-none transition-colors focus:border-accent disabled:opacity-60"
                     >
                       <option value="user">user</option>
                       <option value="admin">admin</option>
@@ -114,7 +116,7 @@ export function UserAdmin({ currentUserId }: { currentUserId: string }) {
             })}
           </tbody>
         </table>
-      </div>
+      </Card>
     </section>
   );
 }
