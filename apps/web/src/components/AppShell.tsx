@@ -17,7 +17,7 @@ export function AppShell({
   children,
 }: {
   user: PublicUser;
-  active: 'chat' | 'dashboard';
+  active: 'chat' | 'dashboard' | 'mcp';
   children: React.ReactNode;
 }) {
   const navLink = (isActive: boolean) =>
@@ -54,13 +54,22 @@ export function AppShell({
               Chat
             </Link>
             {user.role === 'admin' && (
-              <Link
-                href="/dashboard"
-                className={navLink(active === 'dashboard')}
-                aria-current={active === 'dashboard' ? 'page' : undefined}
-              >
-                Dashboard
-              </Link>
+              <>
+                <Link
+                  href="/dashboard"
+                  className={navLink(active === 'dashboard')}
+                  aria-current={active === 'dashboard' ? 'page' : undefined}
+                >
+                  Dashboard
+                </Link>
+                <Link
+                  href="/mcp"
+                  className={navLink(active === 'mcp')}
+                  aria-current={active === 'mcp' ? 'page' : undefined}
+                >
+                  MCP
+                </Link>
+              </>
             )}
           </nav>
 

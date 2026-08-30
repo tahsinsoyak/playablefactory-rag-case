@@ -18,7 +18,10 @@ import { authenticateClient, grantedScopes } from './clients.js';
  * signature. Pointing it at Auth0 or Keycloak instead would be a change of one
  * issuer URL, because nothing in the resource server knows who signed.
  */
-export async function registerOidcRoutes(app: FastifyInstance, ctx: AppContext): Promise<void> {
+export async function registerOidcRoutes(
+  app: FastifyInstance,
+  ctx: AppContext,
+): Promise<SigningKey> {
   const key: SigningKey = await loadSigningKey(ctx.config.DATA_DIR);
   const issuer = ctx.config.OIDC_ISSUER;
 
@@ -125,4 +128,8 @@ export async function registerOidcRoutes(app: FastifyInstance, ctx: AppContext):
       scope: scopes.join(' '),
     };
   });
+
+  // Returned so other routes can mint tokens with the same key rather than
+  // loading a second copy of it.
+  return key;
 }

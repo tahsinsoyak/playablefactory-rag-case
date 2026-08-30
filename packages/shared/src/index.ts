@@ -12,3 +12,4 @@ export * from './documents.js';
 export * from './search.js';
 export * from './answer.js';
 export * from './errors.js';
+export * from './mcp.js';

@@ -10,6 +10,7 @@ import { registerAuthRoutes } from './routes/auth.js';
 import { registerSearchRoutes } from './routes/search.js';
 import { registerCorpusRoutes } from './routes/corpus.js';
 import { registerOidcRoutes } from './oidc/routes.js';
+import { registerMcpRoutes } from './routes/mcp.js';
 import { createRagContext } from './rag.js';
 
 export async function buildServer(ctx: AppContext): Promise<FastifyInstance> {
@@ -120,9 +121,10 @@ export async function buildServer(ctx: AppContext): Promise<FastifyInstance> {
   const rag = createRagContext(ctx.db, ctx.config);
 
   await registerAuthRoutes(app, ctx);
-  await registerOidcRoutes(app, ctx);
+  const signingKey = await registerOidcRoutes(app, ctx);
   registerSearchRoutes(app, ctx, rag, requireAuth);
   registerCorpusRoutes(app, ctx, rag, { requireAuth, requireAdmin });
+  registerMcpRoutes(app, ctx, signingKey, { requireAuth, requireAdmin });
 
   return app;
 }

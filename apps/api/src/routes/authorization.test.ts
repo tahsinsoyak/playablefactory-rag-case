@@ -30,6 +30,8 @@ const ADMIN_ROUTES: { method: 'GET' | 'POST' | 'PATCH'; url: string; payload?: I
   { method: 'GET', url: '/index/health' },
   { method: 'GET', url: '/analytics/search' },
   { method: 'GET', url: '/admin/users' },
+  { method: 'GET', url: '/mcp/status' },
+  { method: 'POST', url: '/mcp/try', payload: { query: 'anything', limit: 2 } },
   {
     method: 'PATCH',
     url: '/admin/users/00000000-0000-4000-8000-000000000000/role',

@@ -270,6 +270,12 @@ Verify it without a client:
 npm run smoke --workspace=@corpus/mcp
 ```
 
+Or sign in as the admin and open **/mcp** in the web app. That page shows both transports and
+whether each is reachable, gives you the client configuration to copy, and can run the real
+tool call end to end. The token for that check is minted by the API, not the browser: putting
+the client secret in the page to make a nicer demo would undo the reason the HTTP transport is
+authenticated at all.
+
 ### HTTP, protected by OIDC
 
 stdio needs no authentication: the client launches the process, owns its lifetime, and
