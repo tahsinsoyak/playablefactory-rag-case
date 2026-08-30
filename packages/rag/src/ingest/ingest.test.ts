@@ -18,7 +18,9 @@ import { runIngestion } from './ingest.js';
  * at milliseconds instead of half a minute.
  */
 class FakeEmbedder implements Embedder {
-  readonly id = 'fake-embedder';
+  // Widened to `string` on purpose: a subclass below overrides it to test that a
+  // changed embedder forces a rebuild, and a literal type would forbid that.
+  readonly id: string = 'fake-embedder';
   readonly dimensions = 384;
   calls = 0;
 
@@ -27,7 +29,8 @@ class FakeEmbedder implements Embedder {
     return texts.map((text) => {
       const vector = new Float32Array(this.dimensions);
       for (let i = 0; i < text.length; i += 1) {
-        vector[i % this.dimensions] += text.charCodeAt(i) / 1000;
+        vector[i % this.dimensions] =
+          (vector[i % this.dimensions] ?? 0) + text.charCodeAt(i) / 1000;
       }
       return vector;
     });
