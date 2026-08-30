@@ -35,12 +35,18 @@ const configSchema = z.object({
   // OpenRouter is the default: one key reaches every model, which makes
   // comparing them on the eval a config change rather than a code change.
   LLM_PROVIDER: z.enum(['openrouter', 'anthropic']).default('openrouter'),
-  LLM_MODEL: z.string().default('anthropic/claude-opus-5'),
+  // The worker model. Cheap on purpose: retrieval does the hard part, so this is
+  // asked to quote already-relevant passages with citations, which is extraction
+  // rather than reasoning. An unset LLM_MODEL must not quietly default to a
+  // frontier model costing a hundred times more per query.
+  LLM_MODEL: z.string().default('qwen/qwen3.7-flash'),
   OPENROUTER_API_KEY: z.string().optional(),
-  // The model that scores answers in the answer-quality eval. Defaults to a
-  // stronger and different model than LLM_MODEL: a model grading its own output
-  // rates it generously, so judge and candidate should not be the same.
-  JUDGE_MODEL: z.string().default('anthropic/claude-sonnet-5'),
+  // The model that scores answers in the answer-quality eval. Must differ from
+  // LLM_MODEL: a model grading its own output rates it generously, and the eval
+  // refuses to run when the two match. A judge should be stronger than the
+  // worker without being expensive, which is what gpt-5-mini buys at $0.25 per
+  // 1M input against $2.00 for a frontier model.
+  JUDGE_MODEL: z.string().default('openai/gpt-5-mini'),
   ANTHROPIC_API_KEY: z.string().optional(),
 
   // Rejected rather than defaulted: a fallback secret is a vulnerability that

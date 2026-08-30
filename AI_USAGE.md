@@ -434,11 +434,23 @@ it generously. The judge also never sees which document was expected. Both are r
 report so a reader can check the setup rather than take 4.92 on faith, and the eval now
 refuses to run at all if the two models match, rather than trusting the default to stay right.
 
-**What I decided after checking:** the same answers scored 5.00 of 5 under `openai/gpt-4o-mini`,
-a different vendor. Both judges agree every answer is faithful, which is the useful agreement.
-But the cheaper judge deducted nothing anywhere, and a judge that never deducts cannot detect a
-regression, so the stricter model stays the default. That is the reason to prefer it, not that
-its number is lower.
+**What I decided after checking three judges.** The point of a judge is to deduct, so the
+choice was measured. `openai/gpt-4o-mini` scored a flat 5.00 and deducted nothing anywhere,
+which makes it worthless as a gate however cheap it is. `anthropic/claude-sonnet-5` scored
+4.92 at eight times the price. `openai/gpt-5-mini` scored 4.88, landing within 0.04 of the
+frontier model at $0.25 per 1M input, and was the **only** judge to catch a real fault: one
+answer claims the documents do not state a rule and then states it, a self-contradiction the
+other two let through. Cheap and discriminating beat expensive and agreeable, so gpt-5-mini is
+the default.
+
+**21. An expensive model was still the default nobody had set.** Moving off Anthropic, I found
+`LLM_MODEL` defaulted to `anthropic/claude-opus-5` in `apps/api/src/config.ts`, even though
+`.env` and `.env.example` had said `qwen/qwen3.7-flash` since the cost work. Anyone running
+without that variable set, which is exactly what a fresh clone does before `.env` is edited,
+would silently have used a model costing over a hundred times more per query. _Caught by:_
+grepping the codebase for Anthropic model ids rather than trusting that changing `.env` had
+changed the default. A default in code and a value in a sample config are two different
+things, and only one of them applies when the variable is absent.
 
 ---
 

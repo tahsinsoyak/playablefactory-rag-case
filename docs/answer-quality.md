@@ -1,6 +1,6 @@
 # Answer quality
 
-Generated 2026-08-30T22:12:36.919Z · answering with `qwen/qwen3.7-flash` · judged by `anthropic/claude-sonnet-5`
+Generated 2026-08-30T22:32:29.586Z · answering with `qwen/qwen3.7-flash` · judged by `openai/gpt-5-mini`
 
 The retrieval eval measures whether the right passages come back. This measures what is
 done with them. Deterministic checks run first and cost nothing: they catch a citation
@@ -13,26 +13,26 @@ part that genuinely needs an opinion.
 | Measure                             | Result                |
 | ----------------------------------- | --------------------- |
 | Answer-or-refuse decision correct   | **100%** (26 cases)   |
-| Citation precision                  | 83%                   |
+| Citation precision                  | 80%                   |
 | Citation recall                     | 90%                   |
-| Figures traceable to cited passages | **100%** (18 checked) |
-| Median end-to-end latency           | 3594 ms               |
+| Figures traceable to cited passages | **100%** (17 checked) |
+| Median end-to-end latency           | 4581 ms               |
 
 ## Judged
 
-Answers came from `qwen/qwen3.7-flash`; the judge is `anthropic/claude-sonnet-5`. They are
+Answers came from `qwen/qwen3.7-flash`; the judge is `openai/gpt-5-mini`. They are
 different models, and the eval refuses to run if they are not.
 
 The judge sees the question, the cited passages, and the answer. It is never told which
 document was expected, so it scores support by the evidence rather than agreement with a
-label. It runs as `anthropic/claude-sonnet-5`, chosen to differ from the answering model where
+label. It runs as `openai/gpt-5-mini`, chosen to differ from the answering model where
 possible: models rate their own output generously.
 
 | Measure                           | Result       |
 | --------------------------------- | ------------ |
-| Faithful (every claim traceable)  | **26/26**    |
+| Faithful (every claim traceable)  | **25/26**    |
 | Relevant (answers what was asked) | **26/26**    |
-| Mean score                        | **4.92 / 5** |
+| Mean score                        | **4.88 / 5** |
 
 ## Per case
 
@@ -45,7 +45,7 @@ _must cite network-specs-applovin.md_
 - citation precision 100%, recall 100%
 - figures: 1/1 traceable
 - judge: **5/5**, faithful yes, relevant yes
-- judge says: The answer accurately states the 5 MB limit and single self-contained inlined HTML file delivery format, both directly supported by passage 1.
+- judge says: Both facts (single self-contained HTML with base64-inlined assets, 5 MB maximum) are explicitly stated in passage 1.
 
 > AppLovin playables ship as a single self-contained HTML file with all assets inlined (base64), and the maximum allowed file size is 5 MB [1].
 
@@ -54,13 +54,13 @@ _must cite network-specs-applovin.md_
 _must cite sdk-notes-v3.md_
 
 - decision: **correctly answered**
-- cited: sdk-notes-v3.md, sdk-notes-v2.md
+- cited: sdk-notes-v3.md
 - citation precision 100%, recall 100%
 - figures: 2/2 traceable
 - judge: **5/5**, faithful yes, relevant yes
-- judge says: The answer accurately reflects the initialization method and the fate of lumen.track as described in passages 1 and 2, and directly answers both parts of the question.
+- judge says: Both claims are directly supported by passage 1: use LumenSDK.init(config) before game code, and lumen.track from v2 is not recognized in v3 and fails silently.
 
-> To initialize the current SDK (v3), call `LumenSDK.init(config)` before any game code runs [1]. The `lumen.track` function belongs to the deprecated v2 SDK; in v3, those legacy calls are not recognized and fail silently [1][2].
+> Call `LumenSDK.init(config)` before any game code runs [1]. The old `lumen.track` calls from v2 are not recognized in v3 and fail silently [1].
 
 ### Why are sound assets built in a separate pass?
 
@@ -71,7 +71,7 @@ _must cite build-pipeline.md_
 - citation precision 100%, recall 100%
 - figures: 1/1 traceable
 - judge: **5/5**, faithful yes, relevant yes
-- judge says: The answer accurately restates the reason given in passage 1 for the separate sound build pass.
+- judge says: The claim matches passage 1 which states audio is encoded in a dedicated pass because compressing it with textures caused nondeterministic size spikes that broke the AppLovin 5 MB limit roughly one in ten builds.
 
 > Sound assets are built in a separate pass because compressing them together with textures produced nondeterministic size spikes that broke the AppLovin 5 MB limit on roughly one build in ten [1].
 
@@ -84,11 +84,11 @@ _must cite incident-postmortem-2026-03.md_
 - citation precision 100%, recall 100%
 - figures: 4/4 traceable
 - judge: **5/5**, faithful yes, relevant yes
-- judge says: All claims about the root cause and fixes are directly supported by passages 1 and 5, and the answer directly addresses the question.
+- judge says: All factual claims in the answer are directly supported by the provided passages (postmortem and changelog), and the answer addresses the asked cause and fixes.
 
-> The March 2026 rejections were caused by a lumen-build update that changed the order of the compress and inline stages, causing audio to be compressed with textures instead of in its dedicated pass [1]. This added 0.4 to 1.1 MB to audio-heavy playables, pushing them over the 5 MB limit because the internal size check ran before inlining [1].
+> The March 2026 rejections were caused by a lumen-build update that changed the order of the compress and inline stages, causing audio to be compressed with textures instead of in its dedicated pass. This added 0.4 to 1.1 MB to audio-heavy playables, pushing them over the 5 MB limit because the internal size check ran before inlining [1].
 >
-> The fixes reverted the unified compression path so audio returns to its dedicated pass, updated the verify stage to measure the final inlined artifact instead of the pre-inline bundle, pinned stage order in CI, and added a regression test that builds the three heaviest historical playables on every pipeline change [1][5].
+> The fixes shipped included reverting the unified compression path so audio returns to its dedicated pass, updating the verify stage to measure the final inlined artifact instead of the pre-inline bundle, pinning stage order in CI, and implementing a regression test that builds the three heaviest historical playables on every pipeline change [1][5].
 
 ### Which languages must every playable ship with, and what is the fallback?
 
@@ -98,9 +98,9 @@ _must cite localization-guide.md_
 - cited: localization-guide.md
 - citation precision 100%, recall 100%
 - judge: **5/5**, faithful yes, relevant yes
-- judge says: The answer correctly lists the minimum language set and fallback exactly as stated in passage 1.
+- judge says: The answer directly matches passage 1 (and is corroborated by passage 6) which lists the required languages and states English is the fallback.
 
-> Every playable must ship with English, Spanish, Portuguese, German, French, Japanese, and Korean. English is used as the fallback when auto-detection fails or the device locale is unsupported [1].
+> Every playable must ship with English, Spanish, Portuguese, German, French, Japanese, and Korean [1]. English is used as the fallback when auto-detection fails or the device locale is unsupported [1].
 
 ### Who is the client for Merge Marina?
 
@@ -110,7 +110,7 @@ _must cite client-briefs/merge-marina.md_
 - cited: delivery-reports/2025-09-merge-marina.md, delivery-reports/2025-12-merge-marina.md, delivery-reports/2026-02-merge-marina.md, client-briefs/merge-marina.md, delivery-reports/2026-06-merge-marina.md, delivery-reports/2025-10-merge-marina.md
 - citation precision 17%, recall 100%
 - judge: **5/5**, faithful yes, relevant yes
-- judge says: The answer correctly identifies BlueHarbor Interactive as the client, directly supported by multiple passages.
+- judge says: All provided passages explicitly identify the client as BlueHarbor Interactive, so the answer is fully supported and directly addresses the question.
 
 > The client for Merge Marina is BlueHarbor Interactive [1][2][3][6][7][8].
 
@@ -122,9 +122,9 @@ _must cite postmortems/2025-11-analytics-leak.md_
 - cited: postmortems/2025-11-analytics-leak.md
 - citation precision 100%, recall 100%
 - judge: **5/5**, faithful yes, relevant yes
-- judge says: The answer accurately reflects the root cause stated in passage 2 and directly answers the question.
+- judge says: The answer directly matches the root-cause statement in passage 2 that a debug flag left enabled caused the buffer to flush to staging and bypass the export-time strip.
 
-> The root cause was a debug flag left enabled, which caused the analytics buffer to flush to the staging endpoint at runtime, bypassing the export-time strip [2].
+> The root cause was a debug flag left enabled, which caused the analytics buffer to flush to the staging endpoint at runtime and bypass the export-time strip [2].
 
 ### What changed in lumen-build 4.2?
 
@@ -134,7 +134,7 @@ _must cite changelogs/lumen-build-4.2.md_
 - cited: changelogs/lumen-build-4.2.md
 - citation precision 100%, recall 100%
 - judge: **5/5**, faithful yes, relevant yes
-- judge says: The answer accurately lists the three changes from passage 1's lumen-build 4.2 changelog without adding unsupported claims.
+- judge says: All three listed changes match the lumen-build 4.2 changelog in passage 1 exactly.
 
 > - Reverted the unified compression path: audio returns to its dedicated pass [1].
 > - Verify stage now measures the final inlined artifact instead of the pre-inline bundle [1].
@@ -149,21 +149,21 @@ _must cite guides/asset-naming.md_
 - citation precision 100%, recall 100%
 - figures: 2/2 traceable
 - judge: **5/5**, faithful yes, relevant yes
-- judge says: The answer accurately reflects the naming convention stated in passage 1 and directly answers the question.
+- judge says: The answer directly quotes passage 1, which states the naming format and example exactly.
 
-> All assets should follow the `pod_game_asset_variant` format in lower snake case (e.g., `nova_bubblebakery_tile_croissant`) [1].
+> All assets follow pod_game_asset_variant, lower snake case: nova_bubblebakery_tile_croissant [1].
 
 ### Who runs the delivery review?
 
 _must cite guides/review-process.md_
 
 - decision: **correctly answered**
-- cited: guides/review-process.md
-- citation precision 100%, recall 100%
+- cited: delivery-reports/2025-05-cinder-keep.md, delivery-reports/2025-05-tidal-tycoon.md, delivery-reports/2025-10-puzzle-pier.md, guides/review-process.md, delivery-reports/2025-11-gloom-garden.md, delivery-reports/2026-05-tidal-tycoon.md, delivery-reports/2026-02-sky-ferry.md, delivery-reports/2026-01-tidal-tycoon.md
+- citation precision 13%, recall 100%
 - judge: **5/5**, faithful yes, relevant yes
-- judge says: The answer accurately reflects passage 4's statement about who runs the delivery review.
+- judge says: Passage 4 explicitly states the delivery review is run by a developer from a different pod and passages 1-3,5-8 corroborate with phrasing like "developer outside the pod," so the answer is fully supported.
 
-> The delivery review is run by a developer from a different pod, never the author's own pod [4].
+> A developer from a different pod, never the author's own pod [4]. This is consistently documented across delivery reports as a developer outside the pod [1][2][3][5][6][7][8].
 
 ### Who owns communication during an incident?
 
@@ -173,7 +173,7 @@ _must cite guides/incident-process.md_
 - cited: guides/incident-process.md
 - citation precision 100%, recall 100%
 - judge: **5/5**, faithful yes, relevant yes
-- judge says: The answer directly and accurately reflects passage 1's statement that the pod producer owns communication during an incident.
+- judge says: Passage 1 explicitly states that the pod producer owns communication during an incident.
 
 > The pod producer owns communication during an incident [1].
 
@@ -185,20 +185,22 @@ _must cite qa-checklist.md_
 - cited: guides/review-process.md, qa-checklist.md
 - citation precision 100%, recall 100%
 - judge: **5/5**, faithful yes, relevant yes
-- judge says: All claims accurately reflect passages 1 and 2 regarding required reviews and the QA checklist before client delivery.
+- judge says: All claims (two internal reviews, running the Pre-Delivery QA Checklist with its items, attaching the checklist result, and using the staging CDN) are directly supported by the provided passages.
 
-> Before every client delivery, two internal reviews must be passed: a design review at the first playable build and a delivery review after QA (conducted by a developer from a different pod) [1]. Additionally, a Pre-Delivery QA Checklist must be run with no exceptions [2]. The checklist requires verifying eight specific criteria:
+> Before every client delivery, the following steps are mandatory:
 >
-> 1. Size check per target network [2].
-> 2. First interaction reachable within 3 seconds [2].
-> 3. No outbound requests in AppLovin builds and analytics stripped [2].
-> 4. Orientation switching mid-session does not break layout [2].
-> 5. All minimum languages render, fallback to English works, and no glyphs are missing [2].
-> 6. End card CTA fires the correct network handler [2].
-> 7. Mute state is respected and no audio autoplays before the first interaction [2].
-> 8. No memory growth occurs after three full loops of the playable [2].
->
-> If any checklist item fails, the delivery is blocked [2]. The pod developer must also attach the completed checklist result to the delivery ticket [2].
+> - Complete two internal reviews: a design review at the first playable build, and a delivery review after QA conducted by a developer from a different pod [1].
+> - Run the Pre-Delivery QA Checklist without exception, verifying:
+>   1. Size check per target network [2]
+>   2. First interaction reachable within 3 seconds [2]
+>   3. No outbound requests in AppLovin builds; analytics stripped [2]
+>   4. Orientation switch mid-session does not break layout [2]
+>   5. Localization: all minimum languages render, fallback to English works, no missing glyphs [2]
+>   6. End card CTA fires the correct network handler [2]
+>   7. Sound: mute state respected, no audio autoplay before first interaction [2]
+>   8. Memory: no growth after three full loops of the playable [2]
+> - Attach the checklist result to the delivery ticket [2].
+> - Serve client-visible builds exclusively from the staging CDN; direct file transfers to clients are prohibited [1].
 
 ### What is the primary engagement metric?
 
@@ -209,9 +211,9 @@ _must cite analytics-events.md_
 - citation precision 100%, recall 100%
 - figures: 2/2 traceable
 - judge: **5/5**, faithful yes, relevant yes
-- judge says: The answer correctly states the primary engagement metric as defined in passage 1.
+- judge says: Passage 1 explicitly states that the time from load_complete to first_interaction is the primary engagement metric.
 
-> The primary engagement metric is the time from `load_complete` to `first_interaction` [1].
+> The time from load_complete to first_interaction [1].
 
 ### What went wrong with Korean text in July 2025?
 
@@ -220,27 +222,26 @@ _must cite postmortems/2025-07-localization-regression.md_
 - decision: **correctly answered**
 - cited: postmortems/2025-07-localization-regression.md
 - citation precision 100%, recall 100%
-- figures: 1/1 traceable
-- judge: **4/5**, faithful yes, relevant yes
-- judge says: The answer accurately reflects passage 1's postmortem about missing Korean glyphs from a font subsetting change, matching the July 2025 event, though it omits the separate July 2025 Korean line-break issue noted in passage 8.
+- judge: **5/5**, faithful yes, relevant yes
+- judge says: Both claims in the answer are directly stated in passage 1 (Postmortem: July 2025 Localization Regression).
 
-> In July 2025, three deliveries shipped with missing Korean glyphs because a font subsetting change trimmed characters that were only used in the fail-state copy [1].
+> Three deliveries shipped with missing Korean glyphs after a font subsetting change trimmed characters used only in the fail-state copy [1]. Internal QA missed the issue because the checklist glyph check at the time only covered Japanese [1].
 
 ### How big can an ad creative get before that network turns it down?
 
 _must cite network-specs-applovin.md_
 
 - decision: **correctly answered**
-- cited: incident-postmortem-2026-03.md, network-specs-applovin.md, network-specs-unity-meta.md
-- citation precision 33%, recall 100%
+- cited: network-specs-applovin.md, network-specs-unity-meta.md
+- citation precision 50%, recall 100%
 - figures: 3/3 traceable
 - judge: **5/5**, faithful yes, relevant yes
-- judge says: The answer accurately reflects the size limits stated in passages 5 and 8 and correctly notes the absence of ironSource limits in the corpus.
+- judge says: All size limits stated (AppLovin 5 MB, Unity 5 MB/10 MB after unzip, Meta 2 MB) and the absence of an ironSource limit are explicitly given in the provided passages.
 
-> - AppLovin: 5 MB for the final single HTML file [3][5].
-> - Unity: 5 MB archive limit, up to 10 MB after unzip [8].
-> - Meta: 2 MB for the single HTML file [8].
-> - ironSource: The provided corpus does not specify a size limit for this network.
+> AppLovin: 5 MB maximum for the final single HTML file [5].
+> Unity: 5 MB archive limit, up to 10 MB after unzip [8].
+> Meta: 2 MB limit for the single HTML file [8].
+> The provided corpus does not specify a size limit for ironSource.
 
 ### Someone left a debugging switch on and data went somewhere it should not have. What did we change?
 
@@ -250,9 +251,9 @@ _must cite postmortems/2025-11-analytics-leak.md_
 - cited: postmortems/2025-11-analytics-leak.md
 - citation precision 100%, recall 100%
 - judge: **5/5**, faithful yes, relevant yes
-- judge says: The answer accurately reflects the fix described in passage 1, directly addressing the debug-flag data leak question.
+- judge says: The answer directly matches the fix described in passage 1: export hard-fails when a network transport is reachable under a forbidden target and debug flags are stripped by the export profile.
 
-> The export now hard-fails if any network transport is reachable from the bundle when the target network forbids runtime requests; debug flags are stripped by the export profile rather than by convention [1].
+> The export process was updated to hard-fail if any network transport is reachable from the bundle when the target network forbids runtime requests, and debug flags are now stripped by the export profile rather than by convention [1].
 
 ### Can someone sign off on work made by their own team?
 
@@ -261,10 +262,11 @@ _must cite guides/review-process.md_
 - decision: **correctly answered**
 - cited: delivery-reports/2025-07-rooftop-dash.md, delivery-reports/2025-06-rooftop-dash.md, delivery-reports/2026-02-tidal-tycoon.md, delivery-reports/2026-04-cinder-keep.md, delivery-reports/2026-01-tidal-tycoon.md, delivery-reports/2025-07-tidal-tycoon.md
 - citation precision 0%, recall 0%
-- judge: **5/5**, faithful yes, relevant yes
-- judge says: The answer accurately reflects the repeated statement across delivery reports that review is run by a developer outside the pod, correctly answering that own-team sign-off is not the process.
+- judge: **2/5**, faithful **no**, relevant yes
+- judge says: The answer incorrectly claims the documents don't explicitly state the rule, but the passages do state delivery reviews are run by a developer outside the pod per the review process.
+- unsupported claims: The provided documents do not explicitly state whether signing off on one's own team's work is permitted.
 
-> According to the delivery reports, the delivery review must be run by a developer outside the pod, meaning work cannot be signed off by someone from their own team [1][2][3][5][6][7].
+> The provided documents do not explicitly state whether signing off on one's own team's work is permitted. However, the delivery reports consistently note that delivery reviews are run by a developer outside the pod, per the review process [1][2][3][5][6][7].
 
 ### How quickly do we have to write up something that went wrong?
 
@@ -274,7 +276,7 @@ _must cite guides/incident-process.md_
 - cited: guides/incident-process.md
 - citation precision 100%, recall 100%
 - judge: **5/5**, faithful yes, relevant yes
-- judge says: The answer correctly cites the five-business-day postmortem requirement from passage 2, directly answering the question.
+- judge says: Passage 2 explicitly says every incident closes with a postmortem in the corpus within five business days.
 
 > Every incident requires a postmortem to be written up within five business days [2].
 
@@ -283,13 +285,13 @@ _must cite guides/incident-process.md_
 _must cite analytics-events.md_
 
 - decision: **correctly answered**
-- cited: client-briefs/orbit-golf.md, delivery-reports/2025-05-puzzle-pier.md
+- cited: client-briefs/orbit-golf.md, client-briefs/tidal-tycoon.md, client-briefs/sky-ferry.md, client-briefs/cinder-keep.md, client-briefs/gloom-garden.md, client-briefs/rooftop-dash.md, delivery-reports/2025-05-puzzle-pier.md
 - citation precision 0%, recall 0%
 - figures: 2/2 traceable
-- judge: **4/5**, faithful yes, relevant yes
-- judge says: The answer correctly identifies 'time to first interaction' as the metric and cites supported figures from the passages, though citing [1] alongside all the other briefs with the same requirement is a minor oversimplification.
+- judge: **5/5**, faithful yes, relevant yes
+- judge says: Passages repeatedly specify 'first interaction within 3 seconds' as the benchmark and passage 8 reports time to first interaction changing from 3.4 s to 2.6 s, so all claims are supported.
 
-> The "Time to first interaction" metric tracks this, with the delivery report citing 3.4 s and 2.6 s, and client briefs requiring it to be within 3 seconds [8][1].
+> The target benchmark is a time to first interaction of 3 seconds or less [1][2][3][4][6][7], with actual performance tracked at 3.4 s and 2.6 s [8].
 
 ### Where do audio files go, and what must they stay out of?
 
@@ -299,7 +301,7 @@ _must cite guides/asset-naming.md_
 - cited: guides/asset-naming.md
 - citation precision 100%, recall 100%
 - judge: **5/5**, faithful yes, relevant yes
-- judge says: The answer accurately reflects passage 1's statement that audio files live under audio/ and never inside texture folders.
+- judge says: The answer directly matches passage 1 which states audio files live under audio/ and never inside texture folders.
 
 > Audio files live under the `audio/` directory and must never be placed inside texture folders [1].
 
@@ -311,7 +313,7 @@ _must cite client-briefs/merge-marina.md_
 - cited: client-briefs/merge-marina.md
 - citation precision 100%, recall 100%
 - judge: **5/5**, faithful yes, relevant yes
-- judge says: Passage 1 explicitly states Merge Marina's target networks are ironSource and Unity, matching the answer.
+- judge says: Passage 1 (Merge Marina client brief) explicitly lists the target networks as ironSource and Unity.
 
 > The merge game is aimed at ironSource and Unity [1].
 
@@ -322,7 +324,7 @@ _must refuse_
 - decision: **correctly refused**
 - cited: nothing
 - judge: **5/5**, faithful yes, relevant yes
-- judge says: The passages contain no information about vacation policy, so the answer correctly declines.
+- judge says: None of the supplied passages mention vacation, so stating that the corpus lacks relevant information is correct.
 
 > The corpus does not contain anything relevant to that question.
 
@@ -333,7 +335,7 @@ _must refuse_
 - decision: **correctly refused**
 - cited: nothing
 - judge: **5/5**, faithful yes, relevant yes
-- judge says: The passages contain no salary information, so declining is faithful and appropriately relevant.
+- judge says: None of the provided passages mention compensation or pay for senior developers, so the statement that the corpus lacks relevant information is supported.
 
 > The corpus does not contain anything relevant to that question.
 
@@ -344,7 +346,7 @@ _must refuse_
 - decision: **correctly refused**
 - cited: nothing
 - judge: **5/5**, faithful yes, relevant yes
-- judge says: The passages contain no information about health insurance, and the answer correctly declines to answer.
+- judge says: None of the provided passages mention employee benefits or health insurance, so stating the corpus lacks that information is supported.
 
 > The corpus does not contain anything relevant to that question.
 
@@ -355,7 +357,7 @@ _must refuse_
 - decision: **correctly refused**
 - cited: nothing
 - judge: **5/5**, faithful yes, relevant yes
-- judge says: The passages contain no information about office wifi passwords, and the answer correctly declines to answer while accurately noting this.
+- judge says: None of the provided passages mention Wi‑Fi, network credentials, or passwords, so declining is correct.
 
 > The corpus does not contain anything relevant to that question.
 
@@ -366,6 +368,6 @@ _must refuse_
 - decision: **correctly refused**
 - cited: nothing
 - judge: **5/5**, faithful yes, relevant yes
-- judge says: The passages are unrelated delivery reports and contain no information about the World Cup, so the decline to answer is correct and appropriate.
+- judge says: None of the provided passages mention the 2022 football World Cup or its winner, so stating the corpus lacks relevant information is accurate.
 
 > The corpus does not contain anything relevant to that question.

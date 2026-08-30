@@ -31,7 +31,7 @@ describe('chat model selection', () => {
     // The whole point of the typed error: an operator reading this message
     // knows exactly which line of .env to edit.
     assert.throws(
-      () => createChatModel({ provider: 'openrouter', model: 'anthropic/claude-opus-5' }),
+      () => createChatModel({ provider: 'openrouter', model: 'qwen/qwen3.7-flash' }),
       (error: unknown) =>
         error instanceof ChatModelConfigurationError && /OPENROUTER_API_KEY/.test(error.message),
     );
@@ -66,7 +66,9 @@ describe('chat model selection', () => {
   });
 
   it('defaults the OpenRouter model when none is given', () => {
+    // The default is the cheap worker model, not a frontier one: an unset
+    // LLM_MODEL should not quietly cost a hundred times more per query.
     const model = new OpenRouterChatModel({ apiKey: 'sk-or-test' });
-    assert.equal(model.id, 'anthropic/claude-opus-5');
+    assert.equal(model.id, 'qwen/qwen3.7-flash');
   });
 });

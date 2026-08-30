@@ -8,7 +8,7 @@ const OPENROUTER_BASE_URL = 'https://openrouter.ai/api/v1';
 
 export interface OpenRouterChatModelOptions {
   apiKey: string;
-  /** An OpenRouter model id, e.g. `anthropic/claude-opus-5` or `openai/gpt-4o`. */
+  /** An OpenRouter model id, e.g. `qwen/qwen3.7-flash` or `openai/gpt-5-mini`. */
   model?: string;
   maxTokens?: number;
   /** Sent as `HTTP-Referer` and `X-Title`; OpenRouter uses them for attribution. */
@@ -24,7 +24,7 @@ export interface OpenRouterChatModelOptions {
  * means SSE parsing, retries, and typed errors are handled by a maintained
  * client rather than by hand.
  *
- * One provider, many models: the same key reaches Anthropic, OpenAI, Google, and
+ * One provider, many models: the same key reaches OpenAI, Google, Anthropic, and
  * open-weight models by changing `LLM_MODEL` alone. That makes comparing models
  * on the retrieval eval a configuration change, which is exactly what the
  * `ChatModel` port was introduced for.
@@ -39,7 +39,7 @@ export class OpenRouterChatModel implements ChatModel {
   readonly #maxTokens: number;
 
   constructor(options: OpenRouterChatModelOptions) {
-    this.id = options.model ?? 'anthropic/claude-opus-5';
+    this.id = options.model ?? 'qwen/qwen3.7-flash';
     this.#maxTokens = options.maxTokens ?? 4096;
 
     this.#client = new OpenAI({

@@ -327,11 +327,11 @@ The chat model sits behind a `ChatModel` port, so the provider is configuration 
 code. With OpenRouter, changing models is one line in `.env`:
 
 ```bash
-LLM_MODEL=qwen/qwen3.7-flash         # the default - $0.03/$0.13 per 1M tokens
-LLM_MODEL=anthropic/claude-opus-5    # strongest, ~170x the input cost
-LLM_MODEL=anthropic/claude-sonnet-5
-LLM_MODEL=openai/gpt-4o-mini
-LLM_MODEL=deepseek/deepseek-chat     # open weights
+LLM_MODEL=qwen/qwen3.7-flash         # the default, $0.03 / $0.13 per 1M
+LLM_MODEL=openai/gpt-5-nano          # $0.05 / $0.40
+LLM_MODEL=openai/gpt-5-mini          # $0.25 / $2.00
+LLM_MODEL=deepseek/deepseek-chat     # $0.26 / $1.03, open weights
+LLM_MODEL=google/gemini-2.5-flash    # $0.30 / $2.50
 ```
 
 **The default is deliberately a cheap model.** Retrieval does the hard part here: by the
