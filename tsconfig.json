@@ -1,4 +1,8 @@
 {
   "files": [],
-  "references": [{ "path": "./packages/shared" }, { "path": "./packages/rag" }]
+  "references": [
+    { "path": "./packages/shared" },
+    { "path": "./packages/rag" },
+    { "path": "./apps/api" }
+  ]
 }

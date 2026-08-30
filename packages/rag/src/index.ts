@@ -5,3 +5,6 @@
  */
 
 export * from './ports/index.js';
+export * from './store/database.js';
+export * from './store/migrate.js';
+export * from './store/schema.js';
