@@ -25,7 +25,8 @@
     "eval": "tsx apps/api/src/scripts/eval.ts",
     "prepare": "tsc --build",
     "dev:mcp": "tsx apps/mcp/src/http/index.ts",
-    "eval:answers": "tsx apps/api/src/scripts/eval-answers.ts"
+    "eval:answers": "tsx apps/api/src/scripts/eval-answers.ts",
+    "setup": "node scripts/setup.mjs"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
