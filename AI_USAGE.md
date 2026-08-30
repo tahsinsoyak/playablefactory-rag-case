@@ -250,6 +250,42 @@ The test fixture was also duplicated verbatim across the two suites before being
 into `test-support.ts`. A fixture that drifts between suites is worse than none, because the
 suites quietly stop testing the same system.
 
+**13. A fresh clone could not run at all — the most important bug in the project.** With
+everything else finished and verified, I cloned the repository into a clean directory and
+followed the README literally. `npm run seed` failed immediately:
+`Cannot find module '@corpus/rag'`.
+
+The three apps import the shared packages by name, which resolve to each package's `dist/`.
+`dist/` is gitignored build output, so on a clean checkout it does not exist. My working
+copy had those directories from earlier builds — meaning **every command I had verified
+passed for a reason that would not exist on the reviewer's machine**. Nothing about the code
+was wrong; the environment I tested in was quietly different from the one described.
+
+_Caught by:_ cloning into a clean directory. There was no other way — testing in place
+cannot find this, because the thing that is missing is exactly the thing my directory
+already had. _Fixed by:_ a root `prepare` script, which npm runs automatically after
+install.
+
+This is the entry I would point at if asked what AI assistance is worst at. Every earlier
+correction was a mistake in something written; this one was an unexamined assumption about
+the world the code would run in, and it invalidated the verification of every step that came
+before it.
+
+### Final fresh-clone verification
+
+The whole thing was then re-run from a second clean clone, following only the README:
+
+| Step                     | Result                                                        |
+| ------------------------ | ------------------------------------------------------------- |
+| `npm install`            | 334 packages, 43s; packages built automatically via `prepare` |
+| `npm run seed`           | both demo accounts created                                    |
+| `npm run ingest`         | 142 documents indexed in 25.6s, including the model download  |
+| `npm run eval`           | hybrid hit@8 100%, MRR 1.000, 3/3 out-of-corpus refused       |
+| `npm test`               | 56 tests, 0 failures                                          |
+| MCP smoke test           | tool listed and called, correct document returned             |
+| `npm run dev`            | both servers up; sign-in, chat page, and search all working   |
+| Dashboard as normal user | 404, as designed                                              |
+
 ---
 
 ## Overall

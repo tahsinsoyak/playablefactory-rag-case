@@ -48,13 +48,13 @@ second API key.
 search; grounded RAG answers with citations; chat page; admin dashboard; MCP search
 server; auth and role-based authorization; README; AI usage log.
 
-**Bonus we intend to do**, ranked by value earned per hour:
+**Bonus, all delivered** — ranked by value earned per hour when planned, ticked as built:
 
 1. **Hybrid retrieval** — vector + BM25 keyword, fused. Near-free given our storage choice, and it lifts the most heavily weighted axis.
 2. **Incremental / self-updating ingestion** — content-hash based, so new, changed, and deleted documents are detected and only the delta is re-embedded. Called out in the case as a significant bonus.
 3. **Retrieval eval** — the five sample questions plus out-of-corpus probes, scored (hit@k / MRR) and reported, so retrieval claims are backed by a number.
 4. **Streaming answers** and citation highlighting in the chat UI.
-5. **Admin user management** — list users, change roles.
+5. **Admin user management** — list users, change roles, with a guard against demoting the last admin.
 
 **Explicitly out of scope** — say so in the README rather than half-build it:
 
