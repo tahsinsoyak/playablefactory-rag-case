@@ -1,9 +1,21 @@
 import { z } from 'zod';
-import { searchHitSchema, retrievalModeSchema } from './search.js';
+import { searchHitSchema } from './search.js';
+
+/**
+ * Answering supports only the modes that include the vector half.
+ *
+ * The refusal gate is a cosine-similarity floor, and BM25 scores are unbounded
+ * and corpus-dependent - there is no calibrated number to threshold on. Rather
+ * than let a keyword-only answer silently lose its "don't make things up"
+ * guarantee, the contract excludes the mode. Search still exposes all three, so
+ * the dashboard can compare them.
+ */
+export const answerModeSchema = z.enum(['hybrid', 'vector']);
+export type AnswerMode = z.infer<typeof answerModeSchema>;
 
 export const answerRequestSchema = z.object({
   question: z.string().min(1).max(1000),
-  mode: retrievalModeSchema.default('hybrid'),
+  mode: answerModeSchema.default('hybrid'),
   /** How many chunks to ground on. Tuned against the eval, not by feel. */
   topK: z.number().int().min(1).max(20).default(8),
 });

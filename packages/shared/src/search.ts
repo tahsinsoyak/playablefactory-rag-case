@@ -24,8 +24,18 @@ export const searchHitSchema = z.object({
   heading: z.string().nullable(),
   text: z.string(),
   ordinal: z.number().int().nonnegative(),
-  /** Fused rank score. Comparable within one response, not across modes. */
+  /**
+   * Fused RRF rank score. Orders hits within one response, and deliberately
+   * nothing more: it is built from ranks, so it says where a chunk placed, never
+   * how relevant it is. Do not threshold on it.
+   */
   score: z.number(),
+  /**
+   * Cosine similarity to the query, in [-1, 1]. Null when only the keyword half
+   * found this chunk. This is the absolute measure - the one a relevance floor
+   * can actually be built on.
+   */
+  vectorScore: z.number().nullable(),
   /** Per-strategy ranks, null when that strategy did not return the chunk. Explains the fusion. */
   vectorRank: z.number().int().positive().nullable(),
   keywordRank: z.number().int().positive().nullable(),

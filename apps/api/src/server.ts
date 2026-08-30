@@ -7,7 +7,9 @@ import type { AppContext } from './context.js';
 import { HttpError } from './errors.js';
 import { createRequireAuth, requireRole } from './auth/middleware.js';
 import { registerAuthRoutes } from './routes/auth.js';
-import { listUsers } from './auth/users.js';
+import { registerSearchRoutes } from './routes/search.js';
+import { registerCorpusRoutes } from './routes/corpus.js';
+import { createRagContext } from './rag.js';
 
 export async function buildServer(ctx: AppContext): Promise<FastifyInstance> {
   const app = Fastify({
@@ -95,13 +97,12 @@ export async function buildServer(ctx: AppContext): Promise<FastifyInstance> {
     return { status: 'ok', sqlite: versions.sqlite, vec: versions.vec };
   });
 
-  await registerAuthRoutes(app, ctx);
+  const requireAdmin = requireRole('admin');
+  const rag = createRagContext(ctx.db, ctx.config);
 
-  // Admin-only. Listed here rather than in a routes file because it is also the
-  // fixture the authorization test asserts against.
-  app.get('/admin/users', { preHandler: [requireAuth, requireRole('admin')] }, async () => ({
-    users: listUsers(ctx.db),
-  }));
+  await registerAuthRoutes(app, ctx);
+  registerSearchRoutes(app, ctx, rag, requireAuth);
+  registerCorpusRoutes(app, ctx, rag, { requireAuth, requireAdmin });
 
   return app;
 }
