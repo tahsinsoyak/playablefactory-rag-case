@@ -45,7 +45,7 @@ Main features:
 | Vector search  | `sqlite-vec` (`vec0` virtual table, 384 dimensions)                          |
 | Keyword search | SQLite FTS5 with BM25                                                        |
 | Embeddings     | `bge-small-en-v1.5` run locally via `@huggingface/transformers` — no API key |
-| Answers        | `claude-opus-5` via `@anthropic-ai/sdk`, streaming                           |
+| Answers        | Any model via OpenRouter (default) or Anthropic directly, streaming          |
 | MCP            | `@modelcontextprotocol/sdk`, stdio transport                                 |
 | Auth           | Own JWT (`jose`) + argon2id (`@node-rs/argon2`), httpOnly cookies            |
 | Validation     | zod 4 — one schema set shared by API, web, and MCP                           |
@@ -57,10 +57,14 @@ No Docker, no external database, and only one API key — see the design notes b
 
 - **Node.js 20.11+** (developed on 24)
 - **npm 10+**
-- An **Anthropic API key**, needed only to generate answers. Ingestion, search, the
-  dashboard, and the MCP server all work without one.
+- An **LLM API key**, needed only to generate answers. Ingestion, search, the dashboard,
+  and the MCP server all work without one.
+  - **OpenRouter** (default) — one key reaches Anthropic, OpenAI, Google, and open-weight
+    models. Get one at <https://openrouter.ai/keys>.
+  - **Anthropic** directly, if you prefer.
 
-Nothing else. No Docker, no database server, no second model provider.
+Nothing else. No Docker, no database server, no embedding provider — embeddings run
+locally.
 
 ## Installation
 
@@ -84,8 +88,9 @@ cp .env.example .env
 
 Open `.env` and set two things:
 
-1. **`ANTHROPIC_API_KEY`** — your key. Leave it empty to run everything except answer
-   generation.
+1. **`OPENROUTER_API_KEY`** — your key from <https://openrouter.ai/keys>; they start with
+   `sk-or-`. Leave it empty to run everything except answer generation. To use Anthropic
+   directly instead, set `LLM_PROVIDER=anthropic` and `ANTHROPIC_API_KEY`.
 2. **`JWT_ACCESS_SECRET` and `JWT_REFRESH_SECRET`** — these have no defaults on purpose; a
    fallback secret is a vulnerability that boots successfully. Generate them with:
 
@@ -250,6 +255,28 @@ Verify it without a client:
 npm run smoke --workspace=@corpus/mcp
 ```
 
+## Choosing a model
+
+The chat model sits behind a `ChatModel` port, so the provider is configuration rather than
+code. With OpenRouter, changing models is one line in `.env`:
+
+```bash
+LLM_MODEL=anthropic/claude-opus-5    # the default
+LLM_MODEL=anthropic/claude-sonnet-5  # cheaper, still strong
+LLM_MODEL=openai/gpt-4o              # a different family entirely
+LLM_MODEL=openai/gpt-4o-mini         # cheapest of these
+LLM_MODEL=deepseek/deepseek-chat     # open weights
+```
+
+Browse the full list at <https://openrouter.ai/models>. Because retrieval is unchanged by
+the choice, `npm run eval -- --answers` gives a like-for-like comparison across models on
+the same passages — which is the point of putting the provider behind a port rather than
+calling an SDK from the route handler.
+
+Switching the _embedder_ is a different matter: it changes the vector space and invalidates
+the index, so ingestion detects it and rebuilds. Switching the _chat model_ invalidates
+nothing.
+
 ## Design notes
 
 **Why SQLite + sqlite-vec, not pgvector.** The corpus is 142 files and 114 KB. A
@@ -261,8 +288,8 @@ transaction. `packages/rag` defines a `VectorStore` interface; pgvector would be
 not a rewrite.
 
 **Why local embeddings.** `bge-small-en-v1.5` costs nothing, needs no key, runs offline, and
-embeds this corpus in seconds. It keeps the reviewer's required setup to a single Anthropic
-key rather than two accounts. Changing embedders invalidates the index — the vector space
+embeds this corpus in seconds. It keeps the reviewer's required setup to a single LLM key
+rather than two accounts. Changing embedders invalidates the index — the vector space
 and width both change — so `documents.embedder_id` is recorded and ingestion rebuilds
 automatically when it differs.
 
@@ -315,6 +342,13 @@ token is treated as a leak and revokes every session for that user. The access c
 httpOnly; the refresh cookie is additionally scoped to `/auth` so the long-lived credential
 is not attached to ordinary requests. Role checks run server-side on every route, and page
 guards run before any markup is generated. Hiding a nav link is a courtesy, not a control.
+
+**Why OpenRouter is the default.** Answer generation is the only part that needs a hosted
+model, and one OpenRouter key reaches every provider — so a reviewer needs one account, and
+comparing models is an `.env` edit rather than a new adapter. The Anthropic adapter is kept
+for calling that API directly. Both use the same prompt and the same cited-or-refused
+decision, which live in shared modules precisely so that changing provider cannot quietly
+change what counts as a grounded answer.
 
 **One retrieval core.** `apps/api` and `apps/mcp` are thin transports over `packages/rag`.
 Neither knows what an embedding is. That is what prevents the MCP tool and the web search

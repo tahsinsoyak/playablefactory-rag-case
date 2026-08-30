@@ -2,6 +2,7 @@ import {
   GroundedAnswerService,
   HybridRetriever,
   SqliteVectorStore,
+  ChatModelConfigurationError,
   createChatModel,
   createEmbedder,
   type AnswerService,
@@ -34,11 +35,31 @@ export function createRagContext(db: Db, config: Config): RagContext {
 
   const answerService: AnswerService = {
     answer(req) {
-      const chatModel = createChatModel({
-        provider: config.LLM_PROVIDER,
-        model: config.LLM_MODEL,
-        apiKey: config.ANTHROPIC_API_KEY,
-      });
+      let chatModel;
+
+      try {
+        chatModel = createChatModel({
+          provider: config.LLM_PROVIDER,
+          model: config.LLM_MODEL,
+          apiKey: config.ANTHROPIC_API_KEY,
+          openRouterApiKey: config.OPENROUTER_API_KEY,
+          appUrl: config.WEB_ORIGIN,
+        });
+      } catch (error) {
+        // A misconfiguration used to escape as a thrown error after the SSE
+        // headers were already sent, which the route could only report as
+        // "something went wrong" - leaving the actual cause, a missing API key,
+        // visible nowhere but the server log. It is safe to tell the user: the
+        // message names an environment variable, never its value.
+        const message =
+          error instanceof ChatModelConfigurationError
+            ? error.message
+            : 'The answer service is not configured.';
+
+        return (async function* () {
+          yield { type: 'error' as const, code: 'configuration', message };
+        })();
+      }
 
       return new GroundedAnswerService({ retriever, chatModel }).answer(req);
     },

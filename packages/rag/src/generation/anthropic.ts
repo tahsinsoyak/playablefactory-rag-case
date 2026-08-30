@@ -1,7 +1,8 @@
 import Anthropic from '@anthropic-ai/sdk';
-import type { AnswerEvent, Citation } from '@corpus/shared';
+import type { AnswerEvent } from '@corpus/shared';
 import type { ChatModel, ChatModelContext } from '../ports/index.js';
-import { SYSTEM_PROMPT, buildUserMessage, extractCitedIndexes, numberSources } from './prompt.js';
+import { SYSTEM_PROMPT, buildUserMessage, numberSources } from './prompt.js';
+import { finishAnswer } from './finish.js';
 
 export interface AnthropicChatModelOptions {
   apiKey: string;
@@ -61,7 +62,7 @@ export class AnthropicChatModel implements ChatModel {
         return;
       }
 
-      yield this.#finish(text, sources, Date.now() - startedAt);
+      yield finishAnswer(text, sources, Date.now() - startedAt);
     } catch (error) {
       yield {
         type: 'error',
@@ -69,55 +70,5 @@ export class AnthropicChatModel implements ChatModel {
         message: error instanceof Error ? error.message : 'The answer service is unavailable.',
       };
     }
-  }
-
-  /**
-   * Turns the finished text into an answer or a refusal.
-   *
-   * The decision rule is structural, not linguistic: a response that cites
-   * nothing is not grounded in the corpus, whatever it says. Treating that as a
-   * refusal is what makes "no invented citations" an enforced property rather
-   * than a request in the prompt - a confident uncited paragraph never reaches
-   * the user as an answer.
-   */
-  #finish(text: string, sources: ReturnType<typeof numberSources>, latencyMs: number): AnswerEvent {
-    const trimmed = text.trim();
-    const citedIndexes = extractCitedIndexes(trimmed, sources.length);
-
-    if (citedIndexes.length === 0) {
-      return {
-        type: 'done',
-        latencyMs,
-        result: {
-          status: 'refused',
-          reason: 'not_in_context',
-          text:
-            trimmed.length > 0
-              ? trimmed
-              : 'The corpus does not contain an answer to that question.',
-          citations: [],
-        },
-      };
-    }
-
-    const citations: Citation[] = citedIndexes.flatMap((index) => {
-      const source = sources[index - 1];
-      if (!source) return [];
-      return [
-        {
-          index,
-          documentId: source.documentId,
-          path: source.path,
-          title: source.title,
-          chunkIds: source.chunkIds,
-        },
-      ];
-    });
-
-    return {
-      type: 'done',
-      latencyMs,
-      result: { status: 'answered', text: trimmed, citations },
-    };
   }
 }

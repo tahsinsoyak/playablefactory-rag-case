@@ -28,8 +28,11 @@ const configSchema = z.object({
   EMBEDDER: z.string().default('local:bge-small-en-v1.5'),
   MODEL_CACHE_DIR: z.string().default('./.models'),
 
-  LLM_PROVIDER: z.enum(['anthropic']).default('anthropic'),
-  LLM_MODEL: z.string().default('claude-opus-5'),
+  // OpenRouter is the default: one key reaches every model, which makes
+  // comparing them on the eval a config change rather than a code change.
+  LLM_PROVIDER: z.enum(['openrouter', 'anthropic']).default('openrouter'),
+  LLM_MODEL: z.string().default('anthropic/claude-opus-5'),
+  OPENROUTER_API_KEY: z.string().optional(),
   ANTHROPIC_API_KEY: z.string().optional(),
 
   // Rejected rather than defaulted: a fallback secret is a vulnerability that

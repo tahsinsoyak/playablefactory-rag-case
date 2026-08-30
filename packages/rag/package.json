@@ -25,6 +25,7 @@
     "@corpus/shared": "*",
     "@huggingface/transformers": "^4.2.0",
     "better-sqlite3": "^13.0.3",
+    "openai": "^7.8.0",
     "sqlite-vec": "^0.1.9"
   },
   "devDependencies": {
