@@ -1,30 +1,18 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import { ChatModelConfigurationError, createChatModel } from './index.js';
-import { AnthropicChatModel } from './anthropic.js';
 import { OpenRouterChatModel } from './openrouter.js';
 
 describe('chat model selection', () => {
   it('builds an OpenRouter model and carries the model id through', () => {
     const model = createChatModel({
       provider: 'openrouter',
-      model: 'openai/gpt-4o-mini',
+      model: 'openai/gpt-5-mini',
       openRouterApiKey: 'sk-or-test',
     });
 
     assert.ok(model instanceof OpenRouterChatModel);
-    assert.equal(model.id, 'openai/gpt-4o-mini');
-  });
-
-  it('builds an Anthropic model when asked for one directly', () => {
-    const model = createChatModel({
-      provider: 'anthropic',
-      model: 'claude-opus-5',
-      apiKey: 'sk-ant-test',
-    });
-
-    assert.ok(model instanceof AnthropicChatModel);
-    assert.equal(model.id, 'claude-opus-5');
+    assert.equal(model.id, 'openai/gpt-5-mini');
   });
 
   it('names the missing variable rather than failing vaguely', () => {
@@ -35,21 +23,18 @@ describe('chat model selection', () => {
       (error: unknown) =>
         error instanceof ChatModelConfigurationError && /OPENROUTER_API_KEY/.test(error.message),
     );
-
-    assert.throws(
-      () => createChatModel({ provider: 'anthropic', model: 'claude-opus-5' }),
-      (error: unknown) =>
-        error instanceof ChatModelConfigurationError && /ANTHROPIC_API_KEY/.test(error.message),
-    );
   });
 
-  it('rejects an unknown provider and lists the supported ones', () => {
+  it('rejects an unknown provider and names the supported one', () => {
     assert.throws(
-      () => createChatModel({ provider: 'llamafile', model: 'whatever', apiKey: 'x' }),
+      () =>
+        createChatModel({
+          provider: 'llamafile',
+          model: 'whatever',
+          openRouterApiKey: 'sk-or-test',
+        }),
       (error: unknown) =>
-        error instanceof ChatModelConfigurationError &&
-        /openrouter/.test(error.message) &&
-        /anthropic/.test(error.message),
+        error instanceof ChatModelConfigurationError && /openrouter/.test(error.message),
     );
   });
 
@@ -65,9 +50,8 @@ describe('chat model selection', () => {
     }
   });
 
-  it('defaults the OpenRouter model when none is given', () => {
-    // The default is the cheap worker model, not a frontier one: an unset
-    // LLM_MODEL should not quietly cost a hundred times more per query.
+  it('defaults to the cheap worker model when none is given', () => {
+    // An unset LLM_MODEL must not quietly cost a hundred times more per query.
     const model = new OpenRouterChatModel({ apiKey: 'sk-or-test' });
     assert.equal(model.id, 'qwen/qwen3.7-flash');
   });

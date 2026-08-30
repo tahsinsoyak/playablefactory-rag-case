@@ -4,7 +4,7 @@ Working document. It states what we are building, the decisions we have made and
 the order we will build it in. It is written for two readers: us while building, and the
 reviewer who will ask "why did you do it this way" during the walkthrough.
 
-Status: **M0–M6 complete.** Last updated: 2026-08-30. See `README.md` to run it, `docs/eval-results.md` for measured retrieval quality, and `AI_USAGE.md` for how it was built.
+Status: **complete.** M0 to M6 plus every bonus except a live deployment. Last updated: 2026-08-30. See `README.md` to run it, `docs/eval-results.md` for measured retrieval quality, and `AI_USAGE.md` for how it was built.
 
 ---
 
@@ -48,19 +48,20 @@ second API key.
 search; grounded RAG answers with citations; chat page; admin dashboard; MCP search
 server; auth and role-based authorization; README; AI usage log.
 
-**Bonus, all delivered**. Ranked by value earned per hour when planned, ticked as built:
+**Bonus, all delivered except deployment:**
 
-1. **Hybrid retrieval**. Vector + BM25 keyword, fused. Near-free given our storage choice, and it lifts the most heavily weighted axis.
-2. **Incremental / self-updating ingestion**. Content-hash based, so new, changed, and deleted documents are detected and only the delta is re-embedded. Called out in the case as a significant bonus.
-3. **Retrieval eval**. The five sample questions plus out-of-corpus probes, scored (hit@k / MRR) and reported, so retrieval claims are backed by a number.
-4. **Streaming answers** and citation highlighting in the chat UI.
-5. **Admin user management**. List users, change roles, with a guard against demoting the last admin.
+1. **Hybrid retrieval.** Vector + BM25 keyword, fused with RRF. Measured against each half alone.
+2. **Incremental, self-updating ingestion.** Content-hash based, so new, changed, and deleted documents are detected and only the delta is re-embedded. Called out in the case as a significant bonus.
+3. **MCP authentication via OIDC.** The other bonus the case calls significant. The API doubles as a small OpenID Provider: RS256 key, discovery, JWKS, `client_credentials`. The MCP server gained an HTTP transport that verifies signature, issuer, audience, expiry, and scope.
+4. **Cross-encoder reranking**, fused as a third ranking rather than overriding the other two, after measuring that overriding scored better on MRR and worse on hit rate.
+5. **Retrieval eval.** 26 cases in three groups, scored hit@k and MRR, with out-of-corpus probes that pass by being refused.
+6. **Answer-quality eval.** Deterministic citation, grounding, and refusal checks, plus a judge model that must differ from the worker.
+7. **Streaming answers** and clickable citations in the chat UI.
+8. **MCP integration page.** Transport status, copyable client config, and a live tool call run server-side so the browser never holds a credential.
+9. **Admin user management.** List users, change roles, with a guard against demoting the last admin.
 
 **Explicitly out of scope**. Say so in the README rather than half-build it:
 
-- MCP authentication via OIDC. It is the largest bonus but needs an identity provider; we
-  ship a documented bearer-token guard on the MCP server instead and write up how OIDC
-  would slot in. Revisit only if M0–M6 land early.
 - Live deployment. Deployment notes in the README instead.
 - Multi-tenancy, document upload UI, OCR/PDF ingestion.
 
@@ -116,7 +117,7 @@ server from becoming a second, drifting implementation of search.
 | Keyword half      | SQLite **FTS5** in the same database                                                                                            | Hybrid retrieval for almost no extra code or infra; one transaction keeps both indexes consistent                                                                                                                                                                                                                             |
 | Fusion            | Reciprocal Rank Fusion over the two ranked lists                                                                                | No score normalisation between cosine distance and BM25 to tune or justify                                                                                                                                                                                                                                                    |
 | Embeddings        | **`bge-small-en-v1.5`**, 384-dim, local, via `@huggingface/transformers`                                                        | Zero cost, no API key, offline, re-index in seconds. Model downloads once (~35 MB) and caches. Keeps the reviewer's required setup down to a single Anthropic key                                                                                                                                                             |
-| Answer generation | A `ChatModel` port in `packages/rag`, default adapter **`claude-opus-5`** via the Anthropic TypeScript SDK, streaming           | The one part that genuinely needs a hosted model. The port keeps the provider a configuration choice rather than a rewrite, so we can compare models on the same eval. Streaming so long answers do not hit request timeouts                                                                                                  |
+| Answer generation | A `ChatModel` port in `packages/rag`, with an OpenRouter adapter and `qwen/qwen3.7-flash` as the worker model                   | One key reaches every model family, so the provider is a config choice and models can be compared on the same eval. Streaming so long answers do not hit request timeouts                                                                                                                                                     |
 | Chunking          | Markdown heading-aware sections, merged toward ~400 tokens with overlap, never crossing a document boundary                     | Documents here are 400–1000 bytes with `#`/`##` structure, so most become one or two chunks. Splitting mid-section would break citations more than it would help recall                                                                                                                                                       |
 | Chunk metadata    | `title` from the H1, `docType` from the directory, `date` parsed from the filename, `path`                                      | Feeds citations, dashboard facets, and later filtered search. Derived from the corpus's own conventions rather than imposed on it                                                                                                                                                                                             |
 | Auth              | Own JWT + argon2id in `apps/api`; access token in an httpOnly cookie, rotating refresh token; `role` claim of `user` or `admin` | Security is an equally weighted axis and this is the part we must defend line by line. One token model protects the web API and the MCP server                                                                                                                                                                                |
@@ -143,7 +144,7 @@ interface ChatModel {
 ```
 
 Selected by environment variable (`LLM_PROVIDER` / `LLM_MODEL`, `EMBEDDER`), with the
-Anthropic and local-embedding adapters shipped as the defaults. The rest of the system.
+The OpenRouter and local-embedding adapters ship as the defaults. The rest of the system.
 Routes, MCP tool, UI, eval, talks only to the interface.
 
 Two constraints this does _not_ paper over, and which the README will state plainly:

@@ -1,4 +1,3 @@
-import Anthropic from '@anthropic-ai/sdk';
 import OpenAI from 'openai';
 
 /**
@@ -18,7 +17,6 @@ export interface CompletionModel {
 export interface CreateCompletionOptions {
   provider: string;
   model: string;
-  apiKey?: string | undefined;
   openRouterApiKey?: string | undefined;
   maxTokens?: number;
 }
@@ -50,34 +48,6 @@ class OpenRouterCompletion implements CompletionModel {
   }
 }
 
-class AnthropicCompletion implements CompletionModel {
-  readonly id: string;
-  readonly #client: Anthropic;
-  readonly #maxTokens: number;
-
-  constructor(apiKey: string, model: string, maxTokens: number) {
-    this.id = model;
-    this.#maxTokens = maxTokens;
-    this.#client = new Anthropic({ apiKey });
-  }
-
-  async complete(system: string, user: string): Promise<string> {
-    const message = await this.#client.messages.create({
-      model: this.id,
-      max_tokens: this.#maxTokens,
-      system,
-      messages: [{ role: 'user', content: user }],
-      thinking: { type: 'adaptive' },
-      output_config: { effort: 'low' },
-    });
-
-    return message.content
-      .filter((block): block is Anthropic.TextBlock => block.type === 'text')
-      .map((block) => block.text)
-      .join('');
-  }
-}
-
 export function createCompletionModel(options: CreateCompletionOptions): CompletionModel {
   const maxTokens = options.maxTokens ?? 2048;
 
@@ -88,12 +58,5 @@ export function createCompletionModel(options: CreateCompletionOptions): Complet
     return new OpenRouterCompletion(options.openRouterApiKey, options.model, maxTokens);
   }
 
-  if (options.provider === 'anthropic') {
-    if (!options.apiKey) {
-      throw new Error('ANTHROPIC_API_KEY is required to run the judge.');
-    }
-    return new AnthropicCompletion(options.apiKey, options.model, maxTokens);
-  }
-
-  throw new Error(`Unknown provider "${options.provider}". Supported: openrouter, anthropic.`);
+  throw new Error(`Unknown provider "${options.provider}". Supported: openrouter.`);
 }

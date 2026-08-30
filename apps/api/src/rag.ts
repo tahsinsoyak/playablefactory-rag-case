@@ -27,7 +27,6 @@ export function chatModelFromConfig(config: Config) {
   return createChatModel({
     provider: config.LLM_PROVIDER,
     model: config.LLM_MODEL,
-    apiKey: config.ANTHROPIC_API_KEY,
     openRouterApiKey: config.OPENROUTER_API_KEY,
     appUrl: config.WEB_ORIGIN,
   });
@@ -48,7 +47,7 @@ export interface RagContext {
  * Wires the retrieval core for the API process.
  *
  * The chat model is built lazily. Search and the dashboard must work without an
- * Anthropic key, only generating an answer needs one, so a missing key fails
+ * OpenRouter key, only generating an answer needs one, so a missing key fails
  * that one request with a clear message instead of preventing the server from
  * starting.
  */

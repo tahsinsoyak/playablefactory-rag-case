@@ -38,7 +38,7 @@ class StubChatModel implements ChatModel {
   async *stream(): AsyncIterable<AnswerEvent> {
     this.called = true;
     yield { type: 'delta', text: this.reply };
-    // Mirrors AnthropicChatModel: the terminal event carries the parsed result.
+    // Mirrors the real adapter: the terminal event carries the parsed result.
     const cited = extractCitedIndexes(this.reply, 9);
     if (cited.length === 0) {
       yield {

@@ -121,7 +121,6 @@ async function main(): Promise<void> {
     ? createCompletionModel({
         provider: config.LLM_PROVIDER,
         model: judgeModel,
-        apiKey: config.ANTHROPIC_API_KEY,
         openRouterApiKey: config.OPENROUTER_API_KEY,
       })
     : undefined;

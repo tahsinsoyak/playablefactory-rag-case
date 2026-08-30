@@ -50,7 +50,7 @@ Main features:
 | Vector search  | `sqlite-vec` (`vec0` virtual table, 384 dimensions)                         |
 | Keyword search | SQLite FTS5 with BM25                                                       |
 | Embeddings     | `bge-small-en-v1.5` run locally via `@huggingface/transformers`, no API key |
-| Answers        | Any model via OpenRouter (default) or Anthropic directly, streaming         |
+| Answers        | Any model through OpenRouter, streaming                                     |
 | MCP            | `@modelcontextprotocol/sdk`, stdio transport                                |
 | Auth           | Own JWT (`jose`) + argon2id (`@node-rs/argon2`), httpOnly cookies           |
 | Validation     | zod 4. One schema set shared by API, web, and MCP                           |
@@ -64,9 +64,8 @@ No Docker, no external database, and only one API key. See the design notes belo
 - **npm 10+**
 - An **LLM API key**, needed only to generate answers. Ingestion, search, the dashboard,
   and the MCP server all work without one.
-  - **OpenRouter** (default). One key reaches Anthropic, OpenAI, Google, and open-weight
-    models. Get one at <https://openrouter.ai/keys>.
-  - **Anthropic** directly, if you prefer.
+  One OpenRouter key reaches every model family, so that is the only provider. Get one at
+  <https://openrouter.ai/keys>.
 
 Nothing else. No Docker, no database server, and no embedding provider: embeddings run
 locally.
@@ -94,8 +93,7 @@ cp .env.example .env
 Open `.env` and set two things:
 
 1. **`OPENROUTER_API_KEY`**. Your key from <https://openrouter.ai/keys>; they start with
-   `sk-or-`. Leave it empty to run everything except answer generation. To use Anthropic
-   directly instead, set `LLM_PROVIDER=anthropic` and `ANTHROPIC_API_KEY`.
+   `sk-or-`. Leave it empty to run everything except answer generation.
 2. **`JWT_ACCESS_SECRET` and `JWT_REFRESH_SECRET`**. These have no defaults on purpose; a
    fallback secret is a vulnerability that boots successfully. Generate them with:
 
@@ -419,10 +417,11 @@ guards run before any markup is generated. Hiding a nav link is a courtesy, not 
 
 **Why OpenRouter is the default.** Answer generation is the only part that needs a hosted
 model, and one OpenRouter key reaches every provider, so a reviewer needs one account, and
-comparing models is an `.env` edit rather than a new adapter. The Anthropic adapter is kept
-for calling that API directly. Both use the same prompt and the same cited-or-refused
-decision, which live in shared modules precisely so that changing provider cannot quietly
-change what counts as a grounded answer.
+comparing models is an `.env` edit rather than a new adapter. It is the only provider for
+exactly that reason: a second one would add a code path without adding reach, and every extra
+path is somewhere the grounding contract could drift. The `ChatModel` port is still the seam,
+and the prompt and the cited-or-refused decision live outside the adapter, so a provider added
+later cannot arrive with its own version of what counts as grounded.
 
 **One retrieval core.** `apps/api` and `apps/mcp` are thin transports over `packages/rag`.
 Neither knows what an embedding is. That is what prevents the MCP tool and the web search
@@ -509,15 +508,15 @@ eval **refuses to run** if `JUDGE_MODEL` equals `LLM_MODEL`, because a model gra
 output rates it generously and the score would not mean what the report claims.
 
 **Checked against a second judge.** Running the same answers past `openai/gpt-4o-mini`, a
-different vendor and family, returns 5.00 of 5 where `anthropic/claude-sonnet-5` returns 4.92.
+different vendor and family, returns 5.00 of 5 where `anthropic/claude-sonnet-5` returned 4.92.
 Both agree every answer is faithful, which is the result that matters. The gap is worth
 knowing though: the cheaper judge deducted nothing at all, and a judge that never deducts
 cannot detect a regression. The stricter one stays the default for that reason.
 
-| Judge                                 | Vendor    | Mean score | Faithful |
-| ------------------------------------- | --------- | ---------- | -------- |
-| `anthropic/claude-sonnet-5` (default) | Anthropic | 4.92 / 5   | 26/26    |
-| `openai/gpt-4o-mini`                  | OpenAI    | 5.00 / 5   | 26/26    |
+| Judge                       | Vendor    | Mean score | Faithful |
+| --------------------------- | --------- | ---------- | -------- |
+| `anthropic/claude-sonnet-5` | Anthropic | 4.92 / 5   | 26/26    |
+| `openai/gpt-4o-mini`        | OpenAI    | 5.00 / 5   | 26/26    |
 
 Any OpenRouter model works as a judge. Swap one for a single run without editing `.env`:
 
