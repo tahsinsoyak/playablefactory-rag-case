@@ -82,3 +82,158 @@ Two things surfaced that neither of us predicted:
 - **npm 12 blocks install scripts by default**, so `onnxruntime-node`'s postinstall never
   ran. Embeddings work anyway, but this is exactly the kind of thing that breaks a
   "works on a fresh machine" claim, so it belongs in the README.
+
+---
+
+## M1 — Auth spine
+
+**What AI did:** wrote the schema and migrations, argon2id hashing, JWT issuing and
+verification, the refresh-token rotation logic, the route handlers, and the test suite.
+
+**What I decided:** that this milestone gets tested properly rather than eyeballed, because
+security is separately graded and I have to defend it line by line in the walkthrough. Also
+that the demo credentials live in `.env` rather than hard-coded, so a reviewer can change
+them.
+
+**Where it went well, and worth calling out as a review of the AI rather than a rubber
+stamp:** several of the security properties here came from Claude proposing them and
+justifying the reason — the decoy hash so a login for a nonexistent address costs the same
+argon2 work as a real one, and revoking the whole token family on reuse of a rotated refresh
+token. I kept both because the reasoning held up, not because they sounded good. The one I
+pushed on was scoping the refresh cookie to `/auth`; the justification — a long-lived
+credential should not ride along on every request — is sound, so it stayed.
+
+**What I checked myself:** that the tests actually fail when the protection is removed, not
+just that they pass. A test asserting 403 is worthless if it would also pass with the guard
+deleted.
+
+## M2 — Ingestion
+
+**What AI did:** corpus loader, metadata extraction, the heading-aware chunker, the local
+embedder, the SQLite store, the incremental ingestion pass, and 13 tests.
+
+**Where it got things wrong:**
+
+**4. Deleting a document would have left orphaned vectors.** The first version of the store
+relied on `on delete cascade` to clean up. That works for `chunks` and `chunk_rowids`, but
+`vec_chunks` and `chunks_fts` are virtual tables with no foreign keys — nothing would have
+cascaded, and deleted documents would have kept surfacing in search results with their text
+already gone. _Caught by:_ writing a test that asserts all three counts return to zero after
+a removal, rather than only checking that the `chunks` table emptied. That test exists
+precisely because the invariant is invisible from the outside.
+
+**5. A partial answer on the FTS5 tokenizer.** The M0 spike found that `LumenSDK` stays one
+token, and the fix landed in M2 as `tokenize = "unicode61 tokenchars '.-_'"`. What was not
+initially checked is whether it actually helped on the real corpus — that was verified
+afterwards by running a keyword search for `lumen.track` against the live index and
+confirming it now matches the meeting notes that mention it. A config change that is never
+exercised is a guess wearing a comment.
+
+## M3 — Retrieval and grounded answers
+
+**What AI did:** RRF fusion, the Anthropic adapter, the grounding prompt, the answer
+service, the API routes, and the eval harness.
+
+**Where it got things wrong — the most instructive one in this project:**
+
+**6. The refusal gate thresholded a number that carries no relevance information.** The
+first implementation refused when the top fused RRF score fell below a floor, with a
+plausible-sounding comment deriving the constant from `1/(60 + rank)`. It was wrong in a way
+that reads as correct. RRF scores come from _ranks_, so something always ranks first: the
+eval showed "how much do senior developers get paid?" scoring 0.0328 — byte-identical to the
+best genuine question — and **all three out-of-corpus probes passed the gate**. A system
+described as refusing honestly would in fact have answered every one of them.
+
+_Caught by:_ the eval harness, on its first run, because it scored the out-of-corpus probes
+as explicit cases rather than assuming refusal worked. This is the strongest argument in the
+project for building the eval before trusting retrieval: no amount of reading that code
+would have revealed it, and manual spot-checks of the five sample questions would all have
+passed.
+
+_Fixed by:_ gating on cosine similarity, which is absolute, and measuring the two
+populations instead of guessing a constant — answerable questions land at 0.621–0.827,
+out-of-corpus probes at 0.461–0.487, so the floor sits at 0.55 in the empty band between
+them. A test now asserts that separation still holds.
+
+_Second-order consequence I had to decide:_ this made keyword-only answering impossible to
+gate, since BM25 has no calibrated scale. Rather than ship a mode whose grounding guarantee
+was quietly weaker, `/answer` now rejects it at the schema.
+
+**7. Two commits pushed with a failing check.** Twice I read the output of `npm run lint`,
+saw a failure, and pushed anyway because the shell chain continued past it. Both were
+trivial — an unused variable, a type error in a test — but the process failure is the point:
+the verification step was being _printed_ rather than _gated on_. Fixed by making the commit
+conditional on all three checks exiting zero. Recorded here because a reviewer reading the
+git history will see the two follow-up fix commits, and the honest explanation is process,
+not bad luck.
+
+## M4 — Web app
+
+**What AI did:** the Next.js app — login, chat with SSE streaming and citation highlighting,
+the dashboard, and the server-side page guards.
+
+**Where it got things wrong:**
+
+**8. An open redirect in the login flow.** The login page read a `next` query parameter and
+redirected to it after authenticating, with no check on where it pointed. A link like
+`/login?next=https://evil.example` would have bounced a freshly authenticated user off-site.
+_Caught by:_ reading the redirect logic specifically looking for this, because a post-auth
+redirect is a known place for it. Fixed by accepting only paths starting with a single `/`.
+
+**9. A stale server misled a verification run.** While testing the search endpoint I got a
+404 and briefly went looking for a routing bug. The API process on port 4000 was one started
+an hour earlier, before those routes existed. _Caught by:_ checking the process rather than
+the code. The lesson is verification hygiene — a passing or failing test against the wrong
+build tells you nothing either way.
+
+**Also worth stating plainly:** the UI has not been checked visually. The Chrome extension
+was not connected in this environment, so responsiveness and layout were verified by reading
+the markup and the Tailwind breakpoints, and through HTTP responses — not by eye. That is a
+real gap in the verification, not a formality.
+
+## M5 — MCP server
+
+**What AI did:** the server, the tool definition, and two verification paths.
+
+**What I decided:** that "it compiles" is not evidence an MCP server works. It is verified
+twice — once with a real MCP `Client` over an in-memory transport pair, and once by driving
+the shipped stdio entry point with raw line-delimited JSON-RPC, which is what an actual
+client does.
+
+**A good call by the AI:** opening the database read-only for the MCP process, so a client
+can search but structurally cannot modify the corpus — enforced by the connection rather
+than by which tools happen to be registered.
+
+## M6 — Documentation
+
+**Where it got things wrong:**
+
+**10. Every configured path resolved against the wrong directory.** The README documented
+`npm run seed` and `npm run ingest` from the repo root. Running them to check the
+documentation was accurate, both failed: npm sets a workspace script's cwd to that
+workspace, so `./corpus` resolved to `apps/api/corpus`. The MCP server had it worse — an
+external client launches it with an arbitrary cwd, so it could not reliably find the index
+at all. _Caught by:_ running the README's own commands instead of assuming they worked
+because the underlying code did. Fixed by anchoring paths to the workspace root. Notably,
+that root-walking helper got written twice before being consolidated — duplication lint
+cannot catch and a reader would have to spot.
+
+---
+
+## Overall
+
+**What AI was genuinely good at:** volume with consistency — thirty-odd files sharing one
+error-handling style, one validation approach, one naming convention. Recalling security
+practices worth having (the decoy hash, refresh-token reuse detection, the
+`httpOnly`/`sameSite`/path combination). Writing tests that assert the _invariant_ rather
+than the current output, once pointed at what actually mattered.
+
+**Where it needed watching:** confident wrongness that reads as correct. The RRF threshold is
+the clearest case — a well-named constant, a comment deriving it from real arithmetic, and
+completely wrong about what the number meant. Nothing in the code looked off.
+
+**The pattern across all ten corrections:** every one was caught by something that could
+return an unexpected answer — a spike, a test, an eval, a real HTTP request, running the
+documented command. None were caught by re-reading code. That shaped how the project was
+built: the native dependencies were proven in M0 before anything depended on them, and the
+eval existed before retrieval quality was claimed anywhere.

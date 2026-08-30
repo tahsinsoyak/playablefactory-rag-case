@@ -4,7 +4,7 @@ Working document. It states what we are building, the decisions we have made and
 the order we will build it in. It is written for two readers: us while building, and the
 reviewer who will ask "why did you do it this way" during the walkthrough.
 
-Status: **M0 — foundation**. Last updated: 2026-08-30.
+Status: **M0–M6 complete.** Last updated: 2026-08-30. See `README.md` to run it, `docs/eval-results.md` for measured retrieval quality, and `AI_USAGE.md` for how it was built.
 
 ---
 
@@ -207,12 +207,12 @@ Each milestone ends in a working state and its own commit or commits.
   by default, which stops `onnxruntime-node`'s postinstall; embeddings still work, but the
   README must say so.
 
-- [ ] **M1 — Auth spine.** SQLite schema and migrations, seed script with demo `user` and `admin`, argon2id hashing, login/logout/refresh, `requireAuth` and `requireRole`. _Done when:_ a regular user gets 403 from an admin route, proven by a test.
-- [ ] **M2 — Ingestion.** Corpus loader, metadata extraction, heading-aware chunker, local embedder, writes to the vec and FTS indexes in one transaction, incremental by `content_hash`, `ingestion_runs` recorded. _Done when:_ `npm run ingest` indexes 142 documents and re-running it reports zero changes instead of re-embedding.
-- [ ] **M3 — Retrieval and RAG.** Vector search, BM25 search, RRF fusion, `POST /search`, `POST /answer` streaming from `claude-opus-5` with citations and a refusal path. _Done when:_ all five sample questions cite the expected document and an out-of-corpus question refuses cleanly.
-- [ ] **M4 — Web.** Next.js + Tailwind, responsive on phone, tablet, and desktop: login, chat with streamed answer and clickable citations, admin dashboard covering documents, ingestion runs, index health, and search analytics. _Done when:_ the dashboard is unreachable as a regular user, both in the UI and by direct URL.
-- [ ] **M5 — MCP.** MCP server wrapping `packages/rag` search, token-guarded, with connection instructions. _Done when:_ an MCP client calls the tool and gets results back.
-- [ ] **M6 — Docs and proof.** README covering description, stack, install, run, demo credentials, API docs, deployment notes, and feature list; `AI_USAGE.md`; eval harness and results in `docs/`. _Done when:_ a fresh clone works following only the README.
+- [x] **M1 — Auth spine.** SQLite schema and migrations, seed script with demo `user` and `admin`, argon2id hashing, login/logout/refresh, `requireAuth` and `requireRole`. _Done when:_ a regular user gets 403 from an admin route, proven by a test. **Done** — 10 tests, and confirmed over real HTTP.
+- [x] **M2 — Ingestion.** Corpus loader, metadata extraction, heading-aware chunker, local embedder, writes to the vec and FTS indexes in one transaction, incremental by `content_hash`, `ingestion_runs` recorded. _Done when:_ `npm run ingest` indexes 142 documents and re-running it reports zero changes instead of re-embedding. **Done** — 142 documents, 436 chunks, chunk/vector/FTS counts all equal; a no-change re-run reports 142 unchanged in 0.0s.
+- [x] **M3 — Retrieval and RAG.** Vector search, BM25 search, RRF fusion, `POST /search`, `POST /answer` streaming from `claude-opus-5` with citations and a refusal path. _Done when:_ all five sample questions cite the expected document and an out-of-corpus question refuses cleanly. **Done** — hybrid scores hit@8 100% and MRR 1.000, and all three out-of-corpus probes are refused. The eval caught the refusal gate thresholding an RRF score, which carries no relevance information; see `AI_USAGE.md`.
+- [x] **M4 — Web.** Next.js + Tailwind, responsive on phone, tablet, and desktop: login, chat with streamed answer and clickable citations, admin dashboard covering documents, ingestion runs, index health, and search analytics. _Done when:_ the dashboard is unreachable as a regular user, both in the UI and by direct URL. **Done** — a regular user is redirected away from /dashboard and gets 403 from every admin API route. Not visually reviewed: no browser was available in this environment.
+- [x] **M5 — MCP.** MCP server wrapping `packages/rag` search, token-guarded, with connection instructions. _Done when:_ an MCP client calls the tool and gets results back. **Done** — verified with a real MCP client over an in-memory transport, and over stdio JSON-RPC.
+- [x] **M6 — Docs and proof.** README covering description, stack, install, run, demo credentials, API docs, deployment notes, and feature list; `AI_USAGE.md`; eval harness and results in `docs/`. _Done when:_ a fresh clone works following only the README. **Done** — writing it exposed every configured path resolving against cwd rather than the repo root, which broke `npm run seed` and `npm run ingest` from the root. Fixed and re-verified.
 
 ## 8. Risks
 
