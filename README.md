@@ -461,16 +461,24 @@ list themselves. Set `RERANKER=none` to disable it entirely.
 
 ## Evaluation results
 
-`npm run eval` writes `docs/eval-results.md`. On the case's own sample questions plus
-out-of-corpus probes:
+`npm run eval` writes `docs/eval-results.md`. 26 cases in three groups: **sample** are
+straightforward questions including the five shipped with the case, **paraphrase** ask the way
+someone who has not read the documents would, and **probe** cannot be answered at all, so
+passing means refusing.
 
-| Mode       | hit@8 | MRR       | Out-of-corpus refused |
-| ---------- | ----- | --------- | --------------------- |
-| **hybrid** | 100%  | **1.000** | 3/3                   |
-| vector     | 100%  | 0.900     | 3/3                   |
-| keyword    | 100%  | 0.800     | 3/3                   |
+| Mode                | sample hit@8 | sample MRR | paraphrase hit@8 | paraphrase MRR | probes refused |
+| ------------------- | ------------ | ---------- | ---------------- | -------------- | -------------- |
+| **hybrid + rerank** | **100%**     | **0.815**  | 71%              | 0.529          | 5/5            |
+| hybrid              | 93%          | 0.717      | 86%              | 0.518          | 5/5            |
+| vector              | 100%         | 0.744      | 57%              | 0.446          | 5/5            |
+| keyword             | 71%          | 0.524      | 57%              | 0.464          | 5/5            |
 
-Hybrid earns its place: it ranks the expected document first every time.
+Hybrid beats either half alone, and reranking beats hybrid on the group that matters most.
+
+An earlier version of this table read hit@8 100% and MRR 1.000 across the board, which was
+true of an eval containing only the five sample questions and is not a useful claim. Widening
+the set is what exposed the real numbers, and what made it possible to measure whether
+reranking helped at all.
 
 ## Answer quality
 
