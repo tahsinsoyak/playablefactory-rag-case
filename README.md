@@ -70,6 +70,12 @@ cd playablefactory_ai_case
 npm install
 ```
 
+`npm install` also compiles the shared workspace packages, via npm's `prepare`
+lifecycle. The API, web app, and MCP server all import `@corpus/shared` and
+`@corpus/rag` by package name, so those have to be built before anything can run —
+you should not need to think about it, but if you ever see
+`Cannot find module '@corpus/rag'`, `npm run build` is the fix.
+
 Then create your environment file:
 
 ```bash

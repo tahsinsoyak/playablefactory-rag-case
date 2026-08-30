@@ -22,7 +22,8 @@
     "dev": "node scripts/dev.mjs",
     "seed": "npm run seed --workspace=@corpus/api",
     "ingest": "npm run ingest --workspace=@corpus/api",
-    "eval": "npm run eval --workspace=@corpus/api"
+    "eval": "npm run eval --workspace=@corpus/api",
+    "prepare": "tsc --build"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
