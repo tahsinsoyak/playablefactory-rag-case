@@ -426,6 +426,38 @@ change what counts as a grounded answer.
 Neither knows what an embedding is. That is what prevents the MCP tool and the web search
 from becoming two implementations that drift apart.
 
+## Reranking
+
+Answering runs the fused shortlist through a cross-encoder,
+`ms-marco-MiniLM-L-6-v2`, before the passages reach the model. An embedder turns the query
+and the passage into vectors independently and compares them, so it never sees the two
+together. A cross-encoder reads them as one input, which lets it notice that a passage
+_answers_ a question rather than merely sharing its subject.
+
+Three configurations were measured on the 26-case eval, because the point of adding it was
+to find out whether it earned its cost:
+
+| Configuration                    | sample hit@8 | sample MRR | paraphrase hit@8 | paraphrase MRR |
+| -------------------------------- | ------------ | ---------- | ---------------- | -------------- |
+| Hybrid only                      | 93%          | 0.717      | 86%              | 0.518          |
+| Reranker overrides the order     | 93%          | **0.893**  | 71%              | **0.592**      |
+| Reranker fused as a third signal | **100%**     | 0.815      | 71%              | 0.529          |
+
+Letting the reranker replace the ranking gave the best MRR and the worst hit rate: it lifted
+some documents sharply and pushed others out of the window entirely, which on the answer
+path is a false refusal. Fusing it in as a third ranking, by the same Reciprocal Rank Fusion
+already used for vector and keyword, keeps what the retrievers knew. That is what ships:
+sample questions reach 100% hit and MRR climbs from 0.717 to 0.815.
+
+The remaining paraphrase loss is one question that sat at rank 8 of 8 to begin with, so any
+reordering drops it. It is reported rather than tuned away.
+
+**Applied to answering, not to plain search.** Reranking costs roughly a second per query
+against about 25 ms without it. Answering already spends around three seconds in the model,
+so a third more latency for materially better ordering is a good trade, and ordering is
+exactly what a grounded answer depends on. Search is interactive and the user can see the
+list themselves. Set `RERANKER=none` to disable it entirely.
+
 ## Evaluation results
 
 `npm run eval` writes `docs/eval-results.md`. On the case's own sample questions plus

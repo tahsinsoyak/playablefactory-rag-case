@@ -53,6 +53,32 @@ export interface ChatModel {
   stream(ctx: ChatModelContext): AsyncIterable<AnswerEvent>;
 }
 
+// --- reranking ---------------------------------------------------------------
+
+export interface RerankCandidate {
+  id: string;
+  text: string;
+}
+
+export interface RerankResult {
+  id: string;
+  /** The model's own relevance score. Orders candidates; means nothing absolute. */
+  score: number;
+}
+
+/**
+ * Reorders a shortlist by reading each passage against the query.
+ *
+ * Kept separate from `Embedder` because the two answer different questions. An
+ * embedder asks "where does this text sit in vector space", once per document,
+ * ahead of time. A reranker asks "does this passage answer this query", per
+ * query, and cannot be precomputed.
+ */
+export interface Reranker {
+  readonly id: string;
+  rerank(query: string, candidates: RerankCandidate[]): Promise<RerankResult[]>;
+}
+
 // --- storage ----------------------------------------------------------------
 
 export interface ChunkRecord {

@@ -26,6 +26,10 @@ const configSchema = z.object({
   CORPUS_DIR: z.string().default('./corpus'),
 
   EMBEDDER: z.string().default('local:bge-small-en-v1.5'),
+  // Cross-encoder reranking, applied to answering only. Measured worth: MRR on
+  // the sample group rises from 0.717 to 0.893, for about a second per query.
+  // Set to `none` to turn it off entirely.
+  RERANKER: z.string().default('local:ms-marco-MiniLM-L-6-v2'),
   MODEL_CACHE_DIR: z.string().default('./.models'),
 
   // OpenRouter is the default: one key reaches every model, which makes

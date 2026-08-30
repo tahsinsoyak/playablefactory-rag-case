@@ -357,6 +357,45 @@ the wrong string, which is the kind of failure that looks like a product bug for
 minute. _Caught by:_ reading the actual assertion output rather than assuming a red test
 meant broken code.
 
+## Bonus: reranking
+
+**What I decided:** to widen the eval before touching retrieval. The five sample questions
+scored MRR 1.000, so any change would have been invisible against them, and shipping a
+reranker on that basis would have been adding complexity on faith. The set went to 26 cases
+in three groups, including paraphrases that deliberately avoid the corpus's own vocabulary,
+which is where a better ranker has room to show itself.
+
+That decision paid for itself immediately: on the wider set, hybrid retrieval scores MRR
+0.717 rather than 1.000. The headroom was there all along; the old eval was just too easy to
+see it.
+
+**Three things the measurement changed.**
+
+**16. The relevance floor was refusing a real question.** The floor was 0.55, tuned when the
+only data was five questions phrased in the corpus's own words (0.621 to 0.827) against
+probes (0.461 to 0.487). Paraphrased questions land much closer to the probes: answerable
+cases now run 0.548 to 0.827, and the hardest one scored 0.5479, just under the floor. It
+was being refused even though retrieval had ranked the correct document first. _Caught by:_
+reading the per-case cosine column in the new report rather than only the summary. A false
+refusal is a quieter failure than a hallucination and, on a question the corpus does answer,
+just as wrong. Floor moved to 0.51, with the guard test updated to the re-measured
+populations.
+
+**17. Overriding the ranking with the reranker was worse than fusing it in.** The obvious
+implementation replaced the fused order with the cross-encoder's. That gave the best MRR of
+any configuration (0.893 on sample) and the worst hit rate: it pushed a correct document out
+of the top 8 entirely, which on the answer path means a false refusal. Fusing the reranker in
+as a third ranking, through the same RRF already used for vector and keyword, reaches 100%
+hit on sample and MRR 0.815. _Caught by:_ reporting hit rate alongside MRR. Had the eval
+tracked only MRR, the worse configuration would have looked like the better one.
+
+**18. One of my own eval questions was unanswerable.** "Why is a developer not allowed to
+approve their own team's work?" looked like a fair paraphrase. Retrieval found the right
+document at rank 2, the model was given it, and it correctly refused: the corpus states the
+rule and never gives a reason for it. The case was measuring my question, not the system.
+_Caught by:_ chasing a refusal that looked like a bug and reading the source document.
+Reworded to something the corpus actually answers, with the reason recorded next to it.
+
 ---
 
 ## Overall

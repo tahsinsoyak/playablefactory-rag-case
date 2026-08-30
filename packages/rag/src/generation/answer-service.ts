@@ -10,18 +10,28 @@ import type { AnswerService, ChatModel, Retriever } from '../ports/index.js';
  * through for precisely that reason. Rank tells you the order; only the raw
  * similarity tells you whether the best match is any good.
  *
- * The value is measured, not guessed. Across the sample questions and a set of
- * out-of-corpus probes (vacation policy, salaries, insurance, and some questions
- * about nothing in this domain at all):
+ * The value is measured, and has been re-measured once. The first version sat at
+ * 0.55, tuned on the five sample questions, whose scores ran 0.621 to 0.827
+ * against probes at 0.461 to 0.487. That gap was comfortable because the
+ * questions were phrased in the corpus's own words.
  *
- *   answerable questions   cosine 0.621 - 0.827
- *   out-of-corpus probes   cosine 0.461 - 0.487
+ * Widening the eval with paraphrases, questions asked the way someone who has
+ * not read the documents would ask them, closed the gap sharply:
  *
- * 0.55 sits in the middle of that empty band. `docs/eval-results.md` re-checks
- * the separation on every run, so a corpus change that erodes it shows up as a
- * failing row rather than as silent hallucination.
+ *   answerable questions   cosine 0.548 - 0.827
+ *   out-of-corpus probes   cosine 0.407 - 0.471
+ *
+ * At 0.55 the hardest legitimate question, "Why is a developer not allowed to
+ * approve their own team's work?", scored 0.5479 and was refused, even though
+ * retrieval had ranked the correct document first. A false refusal on a real
+ * question is a worse failure than it looks: the corpus does contain the answer,
+ * and the system claimed otherwise.
+ *
+ * 0.51 sits in the middle of the remaining band. `docs/eval-results.md`
+ * re-checks the separation on every run, so a corpus change that erodes it shows
+ * up as a failing row rather than as silent hallucination or silent refusal.
  */
-export const MIN_RELEVANCE_SCORE = 0.55;
+export const MIN_RELEVANCE_SCORE = 0.51;
 
 export interface GroundedAnswerServiceOptions {
   retriever: Retriever;

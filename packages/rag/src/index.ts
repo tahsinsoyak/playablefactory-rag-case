@@ -14,5 +14,6 @@ export * from './corpus/loader.js';
 export * from './chunking/chunker.js';
 export * from './embedding/index.js';
 export * from './ingest/ingest.js';
+export * from './reranking/index.js';
 export * from './retrieval/retriever.js';
 export * from './generation/index.js';

@@ -107,7 +107,7 @@ describe('refusal gate', () => {
   it('refuses without calling the model when nothing clears the floor', async () => {
     const chatModel = new StubChatModel('This should never be generated.');
     const service = new GroundedAnswerService({
-      retriever: new StubRetriever([hit({ path: 'unrelated.md', vectorScore: 0.47 })]),
+      retriever: new StubRetriever([hit({ path: 'unrelated.md', vectorScore: 0.44 })]),
       chatModel,
     });
 
@@ -182,9 +182,14 @@ describe('refusal gate', () => {
   });
 
   it('uses a floor that separates the measured populations', () => {
-    // Guards the tuning recorded in docs/eval-results.md: answerable questions
-    // measured 0.621-0.827, out-of-corpus probes 0.461-0.487.
-    assert.ok(MIN_RELEVANCE_SCORE > 0.487, 'floor must exclude the out-of-corpus probes');
-    assert.ok(MIN_RELEVANCE_SCORE < 0.621, 'floor must admit the answerable questions');
+    // Guards the tuning recorded in docs/eval-results.md. Re-measured once the
+    // eval grew paraphrased questions: answerable cases run 0.548 to 0.827,
+    // out-of-corpus probes 0.407 to 0.471. The band is much narrower than the
+    // five sample questions alone suggested.
+    assert.ok(MIN_RELEVANCE_SCORE > 0.471, 'floor must exclude the out-of-corpus probes');
+    assert.ok(
+      MIN_RELEVANCE_SCORE < 0.548,
+      'floor must admit the hardest legitimate question, or real questions get false refusals',
+    );
   });
 });

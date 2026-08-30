@@ -5,6 +5,8 @@ import {
   ChatModelConfigurationError,
   createChatModel,
   createEmbedder,
+  createReranker,
+  rerankingDisabled,
   type AnswerService,
   type Embedder,
   type Retriever,
@@ -34,8 +36,12 @@ export function chatModelFromConfig(config: Config) {
 export interface RagContext {
   embedder: Embedder;
   store: VectorStore;
+  /** Fast path, used by `/search`. No reranking. */
   retriever: Retriever;
+  /** Used by `/answer`. Reranked when a reranker is configured. */
+  answerRetriever: Retriever;
   answerService: AnswerService;
+  rerankerId: string | null;
 }
 
 /**
@@ -50,6 +56,26 @@ export function createRagContext(db: Db, config: Config): RagContext {
   const embedder = createEmbedder(config.EMBEDDER, { cacheDir: config.MODEL_CACHE_DIR });
   const store = new SqliteVectorStore(db);
   const retriever = new HybridRetriever(db, store, embedder);
+
+  /**
+   * Reranking is applied to answering and not to raw search, because the two
+   * have different budgets.
+   *
+   * Measured on the eval set: the cross-encoder lifts MRR on the sample group
+   * from 0.717 to 0.893, and costs roughly a second per query. Answering already
+   * spends about three seconds in the model, so a third more latency for
+   * materially better ordering is a good trade, and better ordering is exactly
+   * what the grounded answer depends on. Plain search is interactive and returns
+   * in about 30 ms; making it 30 times slower to reorder a list the user can see
+   * for themselves is not.
+   */
+  const reranker = rerankingDisabled(config.RERANKER)
+    ? undefined
+    : createReranker(config.RERANKER, { cacheDir: config.MODEL_CACHE_DIR });
+
+  const answerRetriever = reranker
+    ? new HybridRetriever(db, store, embedder, { reranker })
+    : retriever;
 
   const answerService: AnswerService = {
     answer(req) {
@@ -73,9 +99,16 @@ export function createRagContext(db: Db, config: Config): RagContext {
         })();
       }
 
-      return new GroundedAnswerService({ retriever, chatModel }).answer(req);
+      return new GroundedAnswerService({ retriever: answerRetriever, chatModel }).answer(req);
     },
   };
 
-  return { embedder, store, retriever, answerService };
+  return {
+    embedder,
+    store,
+    retriever,
+    answerRetriever,
+    answerService,
+    rerankerId: reranker?.id ?? null,
+  };
 }

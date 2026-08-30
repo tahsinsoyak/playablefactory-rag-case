@@ -1,5 +1,11 @@
 import type { DocType, SearchHit, SearchRequest } from '@corpus/shared';
-import { isAsymmetric, type Embedder, type Retriever, type VectorStore } from '../ports/index.js';
+import {
+  isAsymmetric,
+  type Embedder,
+  type Reranker,
+  type Retriever,
+  type VectorStore,
+} from '../ports/index.js';
 import type { Db } from '../store/database.js';
 
 /**
@@ -17,6 +23,21 @@ const RRF_K = 60;
  */
 const CANDIDATE_MULTIPLIER = 4;
 
+/**
+ * How many fused candidates the reranker sees.
+ *
+ * Reranking is the expensive half, one forward pass per candidate, so the
+ * shortlist has to stay short. 20 is wide enough that a document RRF placed
+ * around tenth can still be promoted to first, and narrow enough that the cost
+ * stays roughly flat as `limit` changes.
+ */
+const RERANK_CANDIDATES = 20;
+
+export interface RetrieverOptions {
+  /** When set, the fused shortlist is reordered before it is returned. */
+  reranker?: Reranker;
+}
+
 interface ChunkRow {
   chunkId: string;
   documentId: string;
@@ -33,11 +54,13 @@ export class HybridRetriever implements Retriever {
   readonly #db: Db;
   readonly #store: VectorStore;
   readonly #embedder: Embedder;
+  readonly #reranker: Reranker | undefined;
 
-  constructor(db: Db, store: VectorStore, embedder: Embedder) {
+  constructor(db: Db, store: VectorStore, embedder: Embedder, options: RetrieverOptions = {}) {
     this.#db = db;
     this.#store = store;
     this.#embedder = embedder;
+    this.#reranker = options.reranker;
   }
 
   async search(req: SearchRequest): Promise<SearchHit[]> {
@@ -75,8 +98,12 @@ export class HybridRetriever implements Retriever {
 
     if (fused.size === 0) return [];
 
-    const ordered = [...fused.entries()].sort((a, b) => b[1] - a[1]);
+    let ordered = [...fused.entries()].sort((a, b) => b[1] - a[1]);
     const rows = this.#hydrate(ordered.map(([chunkId]) => chunkId));
+
+    if (this.#reranker) {
+      ordered = await this.#applyReranker(req.query, ordered, rows);
+    }
 
     const hits: SearchHit[] = [];
     for (const [chunkId, score] of ordered) {
@@ -98,6 +125,66 @@ export class HybridRetriever implements Retriever {
     }
 
     return hits;
+  }
+
+  /**
+   * Folds the cross-encoder's opinion into the fused ranking.
+   *
+   * The obvious implementation, replacing the order with the reranker's, was
+   * measurably worse in one direction: it lifted MRR but pushed a correct
+   * document out of the top 8 entirely, which on the answer path is a false
+   * refusal. The reranker is good but not infallible, and letting it overrule
+   * two other signals outright discards what they already knew.
+   *
+   * So it is fused in as a third ranking, by the same Reciprocal Rank Fusion
+   * used for vector and keyword. A document the reranker dislikes but both
+   * retrievers ranked highly still survives; a document the reranker loves
+   * climbs. Only the shortlist is scored, so anything past it keeps its fused
+   * position and stays behind.
+   */
+  async #applyReranker(
+    query: string,
+    ordered: [string, number][],
+    rows: Map<string, ChunkRow>,
+  ): Promise<[string, number][]> {
+    const shortlist = ordered.slice(0, RERANK_CANDIDATES);
+    const tail = ordered.slice(RERANK_CANDIDATES);
+
+    const candidates = shortlist.flatMap(([chunkId]) => {
+      const row = rows.get(chunkId);
+      if (!row) return [];
+      // The heading carries the subject for short sections, exactly as it does
+      // at embedding time, so the reranker sees the same context.
+      const text = row.heading
+        ? `${row.title} > ${row.heading}
+${row.text}`
+        : `${row.title}
+${row.text}`;
+      return [{ id: chunkId, text }];
+    });
+
+    try {
+      const ranked = await this.#reranker!.rerank(query, candidates);
+
+      const rerankRank = new Map(ranked.map((result, index) => [result.id, index + 1]));
+      const fusedRank = new Map(shortlist.map(([chunkId], index) => [chunkId, index + 1]));
+
+      const rescored = shortlist
+        .map(([chunkId, fusedScore]): [string, number, number] => {
+          const retrievalRank = fusedRank.get(chunkId) ?? RERANK_CANDIDATES;
+          const crossRank = rerankRank.get(chunkId) ?? RERANK_CANDIDATES;
+          const combined = 1 / (RRF_K + retrievalRank) + 1 / (RRF_K + crossRank);
+          return [chunkId, fusedScore, combined];
+        })
+        .sort((a, b) => b[2] - a[2])
+        .map(([chunkId, fusedScore]): [string, number] => [chunkId, fusedScore]);
+
+      return [...rescored, ...tail];
+    } catch {
+      // A reranker failure degrades to plain fused order rather than failing the
+      // search: a slower, slightly worse answer beats no answer.
+      return ordered;
+    }
   }
 
   async #embedQuery(query: string): Promise<Float32Array> {

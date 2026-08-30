@@ -22,6 +22,7 @@ export const TEST_CONFIG: Config = {
   // that read the corpus from disk would otherwise look in apps/api/corpus.
   CORPUS_DIR: fromRepoRoot('corpus'),
   EMBEDDER: 'local:bge-small-en-v1.5',
+  RERANKER: 'none',
   MODEL_CACHE_DIR: fromRepoRoot('.models'),
   LLM_PROVIDER: 'anthropic',
   LLM_MODEL: 'claude-opus-5',
