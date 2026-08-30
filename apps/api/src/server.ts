@@ -25,9 +25,27 @@ export async function buildServer(ctx: AppContext): Promise<FastifyInstance> {
   // The browser must send credentials cross-origin (the web app and API are on
   // different ports), so the allowed origin has to be an exact match - `*` is
   // rejected by browsers alongside `credentials: include`.
+  //
+  // In development any loopback origin is accepted, because Next prints a LAN
+  // URL alongside the localhost one and opening either is reasonable; matching
+  // only the configured origin turns that into an opaque "Failed to fetch". In
+  // production the allowed origin is exactly WEB_ORIGIN and nothing else.
+  const isAllowedOrigin = (origin: string | undefined): boolean => {
+    if (!origin) return false;
+    if (origin === ctx.config.WEB_ORIGIN) return true;
+    if (ctx.config.NODE_ENV === 'production') return false;
+
+    try {
+      const { hostname } = new URL(origin);
+      return hostname === 'localhost' || hostname === '127.0.0.1' || hostname === '[::1]';
+    } catch {
+      return false;
+    }
+  };
+
   app.addHook('onRequest', async (request, reply) => {
     const origin = request.headers.origin;
-    if (origin === ctx.config.WEB_ORIGIN) {
+    if (isAllowedOrigin(origin) && origin) {
       reply.header('Access-Control-Allow-Origin', origin);
       reply.header('Access-Control-Allow-Credentials', 'true');
       reply.header('Vary', 'Origin');

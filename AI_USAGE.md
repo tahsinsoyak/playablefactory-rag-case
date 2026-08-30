@@ -286,6 +286,30 @@ The whole thing was then re-run from a second clean clone, following only the RE
 | `npm run dev`            | both servers up; sign-in, chat page, and search all working   |
 | Dashboard as normal user | 404, as designed                                              |
 
+**14. The chat page could never have worked in a browser.** Everything was verified with
+curl, which does not enforce CORS. `/answer` writes its response head with
+`reply.raw.writeHead` for the SSE stream, and that discards every header Fastify had
+staged - including the CORS headers set by the onRequest hook. So the streamed response
+went out with no `Access-Control-Allow-Origin`, the browser blocked it, and the chat page
+failed with a bare "Failed to fetch". Every other route was fine, because they return
+through Fastify normally; only the one route that bypasses it was broken.
+
+_Caught by:_ the user opening the app and telling me. Nothing I ran could have found it -
+curl saw a perfectly healthy stream, the tests passed, the build was clean. This is the
+concrete cost of the gap I had been flagging in every summary: no browser was available in
+this environment, so a whole class of defect was invisible.
+
+_Fixed by:_ copying whatever the hook staged onto the raw head, rather than restating the
+header names, so the fix survives a change to the CORS rules. Added four regression tests
+that assert CORS headers on the preflight, on a normal JSON response, on the SSE response,
+and their absence for an unknown origin - `app.inject` is a client that cares about
+headers, which curl is not. Also relaxed the allowed origin to any loopback host in
+development, since Next prints a LAN URL next to the localhost one and opening either is
+reasonable; production still matches WEB_ORIGIN exactly.
+
+The lesson generalises past this bug: "I verified it" is only as strong as the client used
+to verify. A tool that ignores the rule you depend on cannot test that rule.
+
 ---
 
 ## Overall

@@ -165,3 +165,65 @@ describe('input validation', () => {
     assert.equal(response.statusCode, 400);
   });
 });
+
+describe('CORS', () => {
+  const ORIGIN = 'http://localhost:3000';
+
+  it('answers the preflight for a browser request', async () => {
+    const response = await app.inject({
+      method: 'OPTIONS',
+      url: '/answer',
+      headers: { origin: ORIGIN, 'access-control-request-method': 'POST' },
+    });
+
+    assert.equal(response.statusCode, 204);
+    assert.equal(response.headers['access-control-allow-origin'], ORIGIN);
+    assert.equal(response.headers['access-control-allow-credentials'], 'true');
+  });
+
+  it('sends CORS headers on a normal JSON response', async () => {
+    const response = await app.inject({
+      method: 'POST',
+      url: '/search',
+      headers: { origin: ORIGIN },
+      cookies: { [ACCESS_COOKIE]: userCookie },
+      payload: { query: 'anything', limit: 2, mode: 'keyword' },
+    });
+
+    assert.equal(response.headers['access-control-allow-origin'], ORIGIN);
+  });
+
+  it('sends CORS headers on the streamed answer too', async () => {
+    // Regression guard. /answer writes its head with reply.raw.writeHead, which
+    // discards everything Fastify staged - so it silently shipped without CORS
+    // headers and every browser request failed with "Failed to fetch", while
+    // curl saw a healthy stream because curl does not enforce CORS. A test is
+    // the only cheap way to catch this: it needs a client that cares.
+    const response = await app.inject({
+      method: 'POST',
+      url: '/answer',
+      headers: { origin: ORIGIN },
+      cookies: { [ACCESS_COOKIE]: userCookie },
+      payload: { question: 'anything', mode: 'hybrid', topK: 2 },
+    });
+
+    assert.equal(
+      response.headers['access-control-allow-origin'],
+      ORIGIN,
+      'the SSE response must carry CORS headers or no browser can read it',
+    );
+    assert.equal(response.headers['access-control-allow-credentials'], 'true');
+  });
+
+  it('does not send CORS headers to an unknown origin', async () => {
+    const response = await app.inject({
+      method: 'POST',
+      url: '/search',
+      headers: { origin: 'https://evil.example' },
+      cookies: { [ACCESS_COOKIE]: userCookie },
+      payload: { query: 'anything', limit: 2, mode: 'keyword' },
+    });
+
+    assert.equal(response.headers['access-control-allow-origin'], undefined);
+  });
+});

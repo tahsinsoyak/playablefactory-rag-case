@@ -105,7 +105,23 @@ export function registerSearchRoutes(
       );
     }
 
+    // `reply.raw.writeHead` writes the response head directly and discards every
+    // header Fastify had staged - including the CORS headers set by the onRequest
+    // hook. Without carrying them across, the browser blocks the response and the
+    // chat page fails with "Failed to fetch", while curl (which ignores CORS)
+    // sees a perfectly healthy stream. Copying whatever the hook staged, rather
+    // than restating the header names here, keeps this correct if the CORS rules
+    // change.
+    const stagedHeaders: Record<string, string> = {};
+    for (const [name, value] of Object.entries(reply.getHeaders())) {
+      const lower = name.toLowerCase();
+      if ((lower.startsWith('access-control-') || lower === 'vary') && value !== undefined) {
+        stagedHeaders[name] = String(value);
+      }
+    }
+
     reply.raw.writeHead(200, {
+      ...stagedHeaders,
       'Content-Type': 'text/event-stream',
       'Cache-Control': 'no-cache, no-transform',
       Connection: 'keep-alive',
