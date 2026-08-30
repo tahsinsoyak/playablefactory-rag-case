@@ -431,7 +431,14 @@ still scores as such.
 **A note on what these numbers are worth.** The judge is `claude-sonnet-5` and the answering
 model is `qwen3.7-flash`, deliberately different, because a model grading its own output rates
 it generously. The judge also never sees which document was expected. Both are recorded in the
-report so a reader can check the setup rather than take 4.92 on faith.
+report so a reader can check the setup rather than take 4.92 on faith, and the eval now
+refuses to run at all if the two models match, rather than trusting the default to stay right.
+
+**What I decided after checking:** the same answers scored 5.00 of 5 under `openai/gpt-4o-mini`,
+a different vendor. Both judges agree every answer is faithful, which is the useful agreement.
+But the cheaper judge deducted nothing anywhere, and a judge that never deducts cannot detect a
+regression, so the stricter model stays the default. That is the reason to prefer it, not that
+its number is lower.
 
 ---
 

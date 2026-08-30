@@ -504,9 +504,26 @@ Then a judge model scores the part that genuinely needs judgement:
 
 Three constraints keep the verdicts meaningful. The judge never sees which document was
 expected, so it scores support by the evidence rather than agreement with a label. It judges
-only against the passages the answer cited. And `JUDGE_MODEL` defaults to a different, stronger
-model than `LLM_MODEL`, because a model grading its own output rates it generously; the report
-records both so a reader can check they differed.
+only against the passages the answer cited. And the judge is never the answering model: the
+eval **refuses to run** if `JUDGE_MODEL` equals `LLM_MODEL`, because a model grading its own
+output rates it generously and the score would not mean what the report claims.
+
+**Checked against a second judge.** Running the same answers past `openai/gpt-4o-mini`, a
+different vendor and family, returns 5.00 of 5 where `anthropic/claude-sonnet-5` returns 4.92.
+Both agree every answer is faithful, which is the result that matters. The gap is worth
+knowing though: the cheaper judge deducted nothing at all, and a judge that never deducts
+cannot detect a regression. The stricter one stays the default for that reason.
+
+| Judge                                 | Vendor    | Mean score | Faithful |
+| ------------------------------------- | --------- | ---------- | -------- |
+| `anthropic/claude-sonnet-5` (default) | Anthropic | 4.92 / 5   | 26/26    |
+| `openai/gpt-4o-mini`                  | OpenAI    | 5.00 / 5   | 26/26    |
+
+Any OpenRouter model works as a judge. Swap one for a single run without editing `.env`:
+
+```bash
+npm run eval:answers -- --judge --judge-model=google/gemini-2.5-pro
+```
 
 ```bash
 npm run eval:answers            # deterministic only, one model call per case

@@ -94,10 +94,33 @@ async function main(): Promise<void> {
     chatModel: chatModelFromConfig(config),
   });
 
+  // `--judge-model=<id>` overrides JUDGE_MODEL for one run, so two judges can be
+  // compared without editing .env.
+  const judgeModelArg = process.argv
+    .find((arg) => arg.startsWith('--judge-model='))
+    ?.slice('--judge-model='.length);
+  const judgeModel = judgeModelArg ?? config.JUDGE_MODEL;
+
+  // A model grading its own output rates it generously, so a run where the judge
+  // and the candidate are the same model does not measure what the report says
+  // it measures. Refusing is better than printing a number that looks like
+  // evidence and is not.
+  if (withJudge && judgeModel === config.LLM_MODEL) {
+    console.error(
+      [
+        `The judge and the answering model are both "${judgeModel}".`,
+        'A model grading its own output rates it generously, so the score would not mean',
+        'what the report claims. Set JUDGE_MODEL to a different model, or pass',
+        '--judge-model=<id>. See https://openrouter.ai/models.',
+      ].join('\n'),
+    );
+    process.exit(1);
+  }
+
   const judge = withJudge
     ? createCompletionModel({
         provider: config.LLM_PROVIDER,
-        model: config.JUDGE_MODEL,
+        model: judgeModel,
         apiKey: config.ANTHROPIC_API_KEY,
         openRouterApiKey: config.OPENROUTER_API_KEY,
       })
@@ -202,6 +225,9 @@ async function main(): Promise<void> {
 
     lines.push(
       '## Judged',
+      '',
+      `Answers came from \`${config.LLM_MODEL}\`; the judge is \`${judge?.id}\`. They are`,
+      `different models, and the eval refuses to run if they are not.`,
       '',
       `The judge sees the question, the cited passages, and the answer. It is never told which`,
       `document was expected, so it scores support by the evidence rather than agreement with a`,
