@@ -11,6 +11,7 @@
  * which does call the model and does cost money.
  */
 import { writeFile } from 'node:fs/promises';
+import { join } from 'node:path';
 import {
   GroundedAnswerService,
   HybridRetriever,
@@ -20,7 +21,7 @@ import {
   MIN_RELEVANCE_SCORE,
 } from '@corpus/rag';
 import type { RetrievalMode } from '@corpus/shared';
-import { loadConfig } from '../config.js';
+import { loadConfig, REPO_ROOT } from '../config.js';
 import { initDatabase } from '../db/index.js';
 
 interface EvalCase {
@@ -224,7 +225,9 @@ async function main(): Promise<void> {
     }
   }
 
-  await writeFile('docs/eval-results.md', lines.join('\n'), 'utf8');
+  // Anchored to the repo root: npm runs a workspace script with its cwd inside
+  // that workspace, so a relative path would write into apps/api/docs.
+  await writeFile(join(REPO_ROOT, 'docs', 'eval-results.md'), lines.join('\n'), 'utf8');
   console.log('\nWrote docs/eval-results.md');
   db.close();
 }

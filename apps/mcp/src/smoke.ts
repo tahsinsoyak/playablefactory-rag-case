@@ -8,19 +8,20 @@
  */
 import { existsSync } from 'node:fs';
 import { resolve } from 'node:path';
+import { REPO_ROOT, fromRepoRoot } from '@corpus/rag';
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { InMemoryTransport } from '@modelcontextprotocol/sdk/inMemory.js';
 import { buildMcpServer } from './server.js';
 
 function loadDotEnv(): void {
-  const envPath = resolve(process.cwd(), '.env');
+  const envPath = resolve(REPO_ROOT, '.env');
   if (existsSync(envPath)) process.loadEnvFile(envPath);
 }
 
 async function main(): Promise<void> {
   loadDotEnv();
 
-  const databasePath = process.env['DATABASE_PATH'] ?? './data/corpus.db';
+  const databasePath = fromRepoRoot(process.env['DATABASE_PATH'] ?? './data/corpus.db');
   if (!existsSync(databasePath)) {
     console.error(`No index at ${databasePath}. Run \`npm run ingest\` first.`);
     process.exit(1);
@@ -29,7 +30,7 @@ async function main(): Promise<void> {
   const { server, close } = buildMcpServer({
     databasePath,
     embedderSpec: process.env['EMBEDDER'] ?? 'local:bge-small-en-v1.5',
-    modelCacheDir: process.env['MODEL_CACHE_DIR'] ?? './.models',
+    modelCacheDir: fromRepoRoot(process.env['MODEL_CACHE_DIR'] ?? './.models'),
   });
 
   const [clientTransport, serverTransport] = InMemoryTransport.createLinkedPair();

@@ -4,6 +4,7 @@
  * MCP tool and the web search from drifting into two implementations.
  */
 
+export * from './paths.js';
 export * from './ports/index.js';
 export * from './store/database.js';
 export * from './store/migrate.js';

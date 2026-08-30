@@ -1,6 +1,9 @@
 import { existsSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { z } from 'zod';
+import { REPO_ROOT, fromRepoRoot } from '@corpus/rag';
+
+export { REPO_ROOT };
 
 /**
  * Loads `.env` from the repo root if present. Node can do this natively, so there
@@ -8,7 +11,7 @@ import { z } from 'zod';
  * makes the same build work in a deployment that has no `.env` file at all.
  */
 function loadDotEnv(): void {
-  const envPath = resolve(process.cwd(), '.env');
+  const envPath = resolve(REPO_ROOT, '.env');
   if (existsSync(envPath)) {
     process.loadEnvFile(envPath);
   }
@@ -56,7 +59,13 @@ export function loadConfig(): Config {
     throw new Error(`Invalid environment configuration:\n${problems}\n\nSee .env.example.`);
   }
 
-  cached = parsed.data;
+  // Path settings are stored resolved, so no caller has to remember to do it.
+  cached = {
+    ...parsed.data,
+    DATABASE_PATH: fromRepoRoot(parsed.data.DATABASE_PATH),
+    CORPUS_DIR: fromRepoRoot(parsed.data.CORPUS_DIR),
+    MODEL_CACHE_DIR: fromRepoRoot(parsed.data.MODEL_CACHE_DIR),
+  };
   return cached;
 }
 

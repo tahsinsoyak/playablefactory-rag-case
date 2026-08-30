@@ -1,6 +1,6 @@
 # Retrieval evaluation
 
-Generated 2026-08-30T11:35:15.837Z · embedder `bge-small-en-v1.5` · top-k 8 · relevance floor 0.55
+Generated 2026-08-30T11:54:31.652Z · embedder `bge-small-en-v1.5` · top-k 8 · relevance floor 0.55
 
 Answerable cases score hit@k (is the expected document retrieved at all) and MRR
 (how high it ranks). Out-of-corpus cases invert the test: the system passes by
