@@ -310,6 +310,27 @@ reasonable; production still matches WEB_ORIGIN exactly.
 The lesson generalises past this bug: "I verified it" is only as strong as the client used
 to verify. A tool that ignores the rule you depend on cannot test that rule.
 
+**15. Light mode never shipped.** The design tokens declared the light palette in `@theme`
+and then a second `@theme` inside `@media (prefers-color-scheme: dark)`. `@theme` may only
+appear at the top level, so rather than conditionally overriding, the dark block replaced
+the light palette outright: the served stylesheet contained the dark values and not a single
+light one. Anyone on a light-themed OS would have seen a dark-only app.
+
+_Caught by:_ not trusting the build. `next build` passed, typecheck passed, nothing warned —
+so I fetched the stylesheet the dev server actually serves and grepped it for the light
+surface colour. Zero occurrences. _Fixed by:_ overriding the variables on `:root` under the
+media query instead of redeclaring `@theme`.
+
+Same root cause as correction 14, in a different costume: a build that succeeds is not
+evidence that the output is right, and with no browser available the only way to check is to
+inspect the artifact that actually gets served.
+
+**Brand colour.** The accent is `#E8730C`, extracted from the case PDF's own content stream
+rather than eyeballed from a screenshot — it is the exact fill used for its headings. It
+ships as two tokens because one will not do both jobs: as a fill under near-black ink it
+reaches 5.8:1, but as text on a light surface it is 2.9:1 and fails AA, so the text token is
+a deepened `#B35708` at 4.9:1, lightened to `#F2853A` on dark. Every ratio was computed.
+
 ---
 
 ## Overall

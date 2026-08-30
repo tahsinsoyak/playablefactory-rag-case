@@ -55,7 +55,7 @@ function AnswerBody({ text, onCite }: { text: string; onCite: (index: number) =>
                 type="button"
                 onClick={() => onCite(n)}
                 aria-label={`Show source ${n}`}
-                className="mx-px inline-flex h-[18px] min-w-[18px] items-center justify-center rounded-[4px] bg-accent-soft px-1 align-[1px] text-[11px] font-semibold text-accent transition-colors hover:bg-accent hover:text-accent-ink"
+                className="mx-px inline-flex h-[18px] min-w-[18px] items-center justify-center rounded-[4px] bg-accent-soft px-1 align-[1px] text-[11px] font-semibold text-accent-text transition-colors hover:bg-accent hover:text-accent-ink"
               >
                 {n}
               </button>
@@ -141,7 +141,7 @@ function TurnView({ turn }: { turn: Turn }) {
   return (
     <article className="animate-fade-rise">
       <div className="flex justify-end">
-        <h2 className="max-w-[85%] rounded-[10px] rounded-br-[3px] bg-accent px-3.5 py-2 text-[15px] font-medium text-accent-ink">
+        <h2 className="max-w-[90%] rounded-[10px] rounded-br-[3px] border border-accent-line bg-accent-soft px-3.5 py-2 text-[15px] font-medium text-ink sm:max-w-[80%]">
           {turn.question}
         </h2>
       </div>
@@ -156,7 +156,7 @@ function TurnView({ turn }: { turn: Turn }) {
         ) : (
           <div
             className={cn(
-              'text-[15px] leading-[1.7] whitespace-pre-wrap text-ink',
+              'max-w-[68ch] text-[15px] leading-[1.7] whitespace-pre-wrap text-ink',
               turn.pending && text.length > 0 && 'streaming-caret',
             )}
           >

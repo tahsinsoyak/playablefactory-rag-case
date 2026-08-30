@@ -203,17 +203,17 @@ export function Dashboard({ currentUserId }: { currentUserId: string }) {
       </Section>
 
       <Section title="Ingestion runs">
-        <Card className="overflow-x-auto">
-          <table className="w-full min-w-[560px]">
+        <Card className="overflow-hidden">
+          <table className="w-full">
             <thead className="border-b border-border">
               <tr>
                 <th className={TH}>Started</th>
                 <th className={TH}>Status</th>
                 <th className={cn(TH, 'text-right')}>Added</th>
                 <th className={cn(TH, 'text-right')}>Updated</th>
-                <th className={cn(TH, 'text-right')}>Removed</th>
-                <th className={cn(TH, 'text-right')}>Unchanged</th>
-                <th className={cn(TH, 'text-right')}>Failed</th>
+                <th className={cn(TH, 'hidden text-right sm:table-cell')}>Removed</th>
+                <th className={cn(TH, 'hidden text-right md:table-cell')}>Unchanged</th>
+                <th className={cn(TH, 'hidden text-right sm:table-cell')}>Failed</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
@@ -235,9 +235,11 @@ export function Dashboard({ currentUserId }: { currentUserId: string }) {
                   </td>
                   <td className={cn(TD, 'text-right')}>{run.added}</td>
                   <td className={cn(TD, 'text-right')}>{run.updated}</td>
-                  <td className={cn(TD, 'text-right')}>{run.removed}</td>
-                  <td className={cn(TD, 'text-right text-ink-subtle')}>{run.unchanged}</td>
-                  <td className={cn(TD, 'text-right')}>{run.failed}</td>
+                  <td className={cn(TD, 'hidden text-right sm:table-cell')}>{run.removed}</td>
+                  <td className={cn(TD, 'hidden text-right text-ink-subtle md:table-cell')}>
+                    {run.unchanged}
+                  </td>
+                  <td className={cn(TD, 'hidden text-right sm:table-cell')}>{run.failed}</td>
                 </tr>
               ))}
               {runs.length === 0 && (
@@ -264,24 +266,37 @@ export function Dashboard({ currentUserId }: { currentUserId: string }) {
           />
         </div>
 
-        <Card className="overflow-x-auto">
-          <table className="w-full min-w-[620px]">
+        <Card className="overflow-hidden">
+          <table className="w-full">
             <thead className="border-b border-border">
               <tr>
-                <th className={TH}>Title</th>
-                <th className={TH}>Path</th>
-                <th className={TH}>Type</th>
-                <th className={cn(TH, 'text-right')}>Chunks</th>
+                <th className={TH}>Document</th>
+                <th className={cn(TH, 'hidden lg:table-cell')}>Path</th>
+                <th className={cn(TH, 'hidden sm:table-cell')}>Type</th>
+                <th className={cn(TH, 'hidden text-right sm:table-cell')}>Chunks</th>
                 <th className={TH}>Status</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
               {documents?.documents.map((doc) => (
                 <tr key={doc.id}>
-                  <td className={TD}>{doc.title}</td>
-                  <td className={cn(TD, 'font-mono text-[12px] text-ink-subtle')}>{doc.path}</td>
-                  <td className={cn(TD, 'whitespace-nowrap text-ink-muted')}>{doc.docType}</td>
-                  <td className={cn(TD, 'text-right')}>{doc.chunkCount}</td>
+                  <td className={TD}>
+                    <span className="block">{doc.title}</span>
+                    {/* On narrow screens the path column is hidden, so it rides
+                        along under the title rather than being lost. */}
+                    <span className="mt-0.5 block font-mono text-[11px] text-ink-subtle lg:hidden">
+                      {doc.path}
+                    </span>
+                  </td>
+                  <td
+                    className={cn(TD, 'hidden font-mono text-[12px] text-ink-subtle lg:table-cell')}
+                  >
+                    {doc.path}
+                  </td>
+                  <td className={cn(TD, 'hidden whitespace-nowrap text-ink-muted sm:table-cell')}>
+                    {doc.docType}
+                  </td>
+                  <td className={cn(TD, 'hidden text-right sm:table-cell')}>{doc.chunkCount}</td>
                   <td className={TD}>
                     {doc.status === 'indexed' ? (
                       <Badge tone="positive">indexed</Badge>

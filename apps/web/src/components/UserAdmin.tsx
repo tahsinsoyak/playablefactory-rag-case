@@ -71,12 +71,12 @@ export function UserAdmin({ currentUserId }: { currentUserId: string }) {
 
       {error && <Alert className="mt-3">{error}</Alert>}
 
-      <Card className="mt-3 overflow-x-auto">
-        <table className="w-full min-w-[420px]">
+      <Card className="mt-3 overflow-hidden">
+        <table className="w-full">
           <thead className="border-b border-border">
             <tr>
               <th className={TH}>Email</th>
-              <th className={TH}>Joined</th>
+              <th className={cn(TH, 'hidden sm:table-cell')}>Joined</th>
               <th className={TH}>Role</th>
             </tr>
           </thead>
@@ -90,7 +90,7 @@ export function UserAdmin({ currentUserId }: { currentUserId: string }) {
                     {user.email}
                     {isSelf && <span className="ml-2 text-[12px] text-ink-subtle">(you)</span>}
                   </td>
-                  <td className={cn(TD, 'whitespace-nowrap text-ink-muted')}>
+                  <td className={cn(TD, 'hidden whitespace-nowrap text-ink-muted sm:table-cell')}>
                     {new Date(user.createdAt).toLocaleDateString(undefined, {
                       dateStyle: 'medium',
                     })}

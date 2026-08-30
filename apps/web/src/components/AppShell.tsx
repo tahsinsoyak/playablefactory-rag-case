@@ -24,7 +24,7 @@ export function AppShell({
     cn(
       'rounded-[7px] px-2.5 py-1.5 text-[13px] font-medium transition-colors',
       isActive
-        ? 'bg-accent-soft text-accent'
+        ? 'bg-accent-soft text-accent-text'
         : 'text-ink-muted hover:bg-surface-sunken hover:text-ink',
     );
 

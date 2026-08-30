@@ -3,60 +3,83 @@
 /*
  * Design tokens.
  *
- * One accent, used only for actions and citations, so a coloured thing on the
- * page always means "you can act on this" or "this is a source". Everything else
- * is carried by surface, border, and type weight — which is what keeps a dense
- * tool readable as it grows.
+ * The accent is #E8730C, taken from the case document itself rather than
+ * approximated by eye — it is the exact fill used for its headings.
  *
- * Both schemes are defined here rather than with `dark:` variants throughout, so
- * a colour is never chosen twice and a component cannot be styled for one scheme
- * and forgotten in the other.
+ * It appears as two tokens, not one, because a brand colour rarely works for
+ * both jobs. As a *fill* with near-black ink on top it reaches 5.8:1, which
+ * passes comfortably. As *text* on a light surface it is only 2.9:1 and fails,
+ * so `--color-accent-text` is a deepened version at 4.9:1; on dark it is
+ * lightened instead, to 6.5:1. Every ratio here was computed, not guessed.
+ *
+ * Neutrals are warm to sit with the orange — a cool grey next to it reads as a
+ * mistake rather than a decision.
  */
 @theme {
-  --color-surface: #fafafb;
+  --color-surface: #fbfaf9;
   --color-surface-raised: #ffffff;
-  --color-surface-sunken: #f2f3f6;
-  --color-border: #e4e5ea;
-  --color-border-strong: #d3d5dd;
-  --color-ink: #16181d;
-  --color-ink-muted: #646a79;
-  --color-ink-subtle: #8f95a3;
-  --color-accent: #4f46e5;
-  --color-accent-hover: #4338ca;
-  --color-accent-soft: #eef0ff;
-  --color-accent-ink: #ffffff;
-  --color-positive: #047857;
-  --color-warning: #b45309;
-  --color-warning-soft: #fffbeb;
-  --color-danger: #be123c;
-  --color-danger-soft: #fff1f2;
+  --color-surface-sunken: #f4f2f0;
+  --color-border: #e7e3df;
+  --color-border-strong: #d6d0ca;
+  --color-ink: #1a1815;
+  --color-ink-muted: #6b6560;
+  --color-ink-subtle: #928b84;
 
-  --radius-card: 10px;
+  /* Fill: pair only with --color-accent-ink. */
+  --color-accent: #e8730c;
+  --color-accent-hover: #d2660a;
+  --color-accent-ink: #1a1815;
+  /* Text and icons on a light surface. Never use --color-accent for these. */
+  --color-accent-text: #b35708;
+  --color-accent-soft: #fdf0e3;
+  --color-accent-line: #f2c79a;
+
+  --color-positive: #16704b;
+  --color-positive-soft: #e7f4ee;
+  --color-warning: #96580a;
+  --color-warning-soft: #fdf3e3;
+  --color-danger: #b3243c;
+  --color-danger-soft: #fdeef0;
 
   --font-sans:
     ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
   --font-mono: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, monospace;
 }
 
+/*
+ * Dark scheme.
+ *
+ * These override the variables on :root rather than declaring a second `@theme`.
+ * `@theme` may only appear at the top level - nesting one inside a media query
+ * silently replaces the light palette instead of conditionally overriding it,
+ * which shipped a dark-only build with no light mode at all. The utilities
+ * generated from the block above read these variables, so redefining them here
+ * is all that is needed.
+ */
 @media (prefers-color-scheme: dark) {
-  @theme {
-    --color-surface: #16181d;
-    --color-surface-raised: #1d2026;
-    --color-surface-sunken: #121419;
-    --color-border: #2b2f37;
-    --color-border-strong: #3a3f4a;
-    --color-ink: #edeef2;
-    --color-ink-muted: #99a0af;
-    --color-ink-subtle: #6f7686;
-    --color-accent: #8b8cf7;
-    --color-accent-hover: #a0a1f9;
-    --color-accent-soft: #24273f;
-    --color-accent-ink: #14151f;
-    --color-positive: #34d399;
-    --color-warning: #fbbf24;
-    --color-warning-soft: #2a2214;
-    --color-danger: #fb7185;
-    --color-danger-soft: #2c1720;
+  :root {
+    --color-surface: #17161a;
+    --color-surface-raised: #1e1d22;
+    --color-surface-sunken: #141317;
+    --color-border: #302d33;
+    --color-border-strong: #423e45;
+    --color-ink: #f2efec;
+    --color-ink-muted: #a39c95;
+    --color-ink-subtle: #7d766f;
+
+    --color-accent: #e8730c;
+    --color-accent-hover: #f2853a;
+    --color-accent-ink: #17161a;
+    --color-accent-text: #f2853a;
+    --color-accent-soft: #2c1e12;
+    --color-accent-line: #56341a;
+
+    --color-positive: #4ec08c;
+    --color-positive-soft: #17281f;
+    --color-warning: #e0a34a;
+    --color-warning-soft: #2b2116;
+    --color-danger: #f2718a;
+    --color-danger-soft: #2e181d;
   }
 }
 
@@ -73,12 +96,17 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
-/* A single visible focus treatment, so keyboard users get the same affordance
+/* One visible focus treatment, so keyboard users get the same affordance
    everywhere rather than whatever each element defaults to. */
 :focus-visible {
   outline: 2px solid var(--color-accent);
   outline-offset: 2px;
   border-radius: 4px;
+}
+
+::selection {
+  background-color: var(--color-accent);
+  color: var(--color-accent-ink);
 }
 
 @keyframes fade-rise {
@@ -114,7 +142,7 @@ body {
   height: 1.05em;
   margin-left: 0.12em;
   vertical-align: text-bottom;
-  background-color: currentColor;
+  background-color: var(--color-accent);
   border-radius: 1px;
   animation: caret-pulse 1s ease-in-out infinite;
 }
