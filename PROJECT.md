@@ -16,11 +16,11 @@ answers — and says "I don't know" when the corpus does not cover the question.
 
 Three surfaces over one retrieval core:
 
-| Surface | Who | What it does |
-|---|---|---|
-| **Chat page** | any signed-in user | ask a question, see retrieved passages and a grounded answer with citations |
-| **Dashboard** | admin only | indexed documents, ingestion runs and their status, index health, search analytics |
-| **MCP server** | external MCP clients | the same search exposed as a callable tool |
+| Surface        | Who                  | What it does                                                                       |
+| -------------- | -------------------- | ---------------------------------------------------------------------------------- |
+| **Chat page**  | any signed-in user   | ask a question, see retrieved passages and a grounded answer with citations        |
+| **Dashboard**  | admin only           | indexed documents, ingestion runs and their status, index health, search analytics |
+| **MCP server** | external MCP clients | the same search exposed as a callable tool                                         |
 
 The corpus is Playable Factory's internal production knowledge: client briefs, production
 sync notes, delivery reports, postmortems, SDK/network/build specs, and process guides.
@@ -30,13 +30,13 @@ sync notes, delivery reports, postmortems, SDK/network/build specs, and process 
 
 The case is graded on five equally weighted axes. We build against them directly:
 
-| Axis | What we must be able to show |
-|---|---|
-| **Retrieval and RAG quality** | Correct docs retrieved for the sample questions; answers cite them; honest refusal on out-of-corpus questions; a measurable eval, not a vibe |
-| **Monorepo and architecture** | Clear workspace boundaries; types genuinely shared across the frontend/backend line; the retrieval core reused by the API *and* the MCP server rather than duplicated |
-| **Code quality** | Consistent formatting, real error handling, reusable components, typed API contracts |
-| **Security** | Sign-in enforced; role checks on pages, actions, and APIs; the dashboard and ingestion genuinely closed to regular users |
-| **Communication** | README that works on a fresh machine, honest `AI_USAGE.md`, clean commit history |
+| Axis                          | What we must be able to show                                                                                                                                          |
+| ----------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Retrieval and RAG quality** | Correct docs retrieved for the sample questions; answers cite them; honest refusal on out-of-corpus questions; a measurable eval, not a vibe                          |
+| **Monorepo and architecture** | Clear workspace boundaries; types genuinely shared across the frontend/backend line; the retrieval core reused by the API _and_ the MCP server rather than duplicated |
+| **Code quality**              | Consistent formatting, real error handling, reusable components, typed API contracts                                                                                  |
+| **Security**                  | Sign-in enforced; role checks on pages, actions, and APIs; the dashboard and ingestion genuinely closed to regular users                                              |
+| **Communication**             | README that works on a fresh machine, honest `AI_USAGE.md`, clean commit history                                                                                      |
 
 Our own bar on top of that: `git clone`, `npm install`, one env var, then
 `npm run seed && npm run ingest && npm run dev` — and it works, with no Docker and no
@@ -109,19 +109,19 @@ server from becoming a second, drifting implementation of search.
 
 ## 5. Decisions and why
 
-| Decision | Choice | Why |
-|---|---|---|
-| Workspaces | npm workspaces | Node 24 / npm 12 already present; no extra tool for a reviewer to install |
-| Vector store | **SQLite + `sqlite-vec`** via `better-sqlite3` | Single file, no daemon, no Docker. `npm install` and it runs on a fresh machine, which is what the README criterion actually asks for. The corpus is 114 KB — a server-class vector DB would be scaffolding, not substance. `packages/rag` exposes a `VectorStore` interface so pgvector is a swappable adapter, not a rewrite |
-| Keyword half | SQLite **FTS5** in the same database | Hybrid retrieval for almost no extra code or infra; one transaction keeps both indexes consistent |
-| Fusion | Reciprocal Rank Fusion over the two ranked lists | No score normalisation between cosine distance and BM25 to tune or justify |
-| Embeddings | **`bge-small-en-v1.5`**, 384-dim, local, via `@huggingface/transformers` | Zero cost, no API key, offline, re-index in seconds. Model downloads once (~35 MB) and caches. Keeps the reviewer's required setup down to a single Anthropic key |
-| Answer generation | A `ChatModel` port in `packages/rag`, default adapter **`claude-opus-5`** via the Anthropic TypeScript SDK, streaming | The one part that genuinely needs a hosted model. The port keeps the provider a configuration choice rather than a rewrite, so we can compare models on the same eval. Streaming so long answers do not hit request timeouts |
-| Chunking | Markdown heading-aware sections, merged toward ~400 tokens with overlap, never crossing a document boundary | Documents here are 400–1000 bytes with `#`/`##` structure, so most become one or two chunks. Splitting mid-section would break citations more than it would help recall |
-| Chunk metadata | `title` from the H1, `docType` from the directory, `date` parsed from the filename, `path` | Feeds citations, dashboard facets, and later filtered search. Derived from the corpus's own conventions rather than imposed on it |
-| Auth | Own JWT + argon2id in `apps/api`; access token in an httpOnly cookie, rotating refresh token; `role` claim of `user` or `admin` | Security is an equally weighted axis and this is the part we must defend line by line. One token model protects the web API and the MCP server |
-| Authorization | `requireAuth()` / `requireRole('admin')` enforced **server-side on every route**; hiding UI is cosmetic only | The case explicitly asks that the dashboard and management actions be protected from regular users, so the check lives at the API, not in the React tree |
-| Validation | zod schemas in `packages/shared`, used for request parsing *and* as the source of the TS types | One definition, no drift between what the API validates and what the client believes |
+| Decision          | Choice                                                                                                                          | Why                                                                                                                                                                                                                                                                                                                            |
+| ----------------- | ------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Workspaces        | npm workspaces                                                                                                                  | Node 24 / npm 12 already present; no extra tool for a reviewer to install                                                                                                                                                                                                                                                      |
+| Vector store      | **SQLite + `sqlite-vec`** via `better-sqlite3`                                                                                  | Single file, no daemon, no Docker. `npm install` and it runs on a fresh machine, which is what the README criterion actually asks for. The corpus is 114 KB — a server-class vector DB would be scaffolding, not substance. `packages/rag` exposes a `VectorStore` interface so pgvector is a swappable adapter, not a rewrite |
+| Keyword half      | SQLite **FTS5** in the same database                                                                                            | Hybrid retrieval for almost no extra code or infra; one transaction keeps both indexes consistent                                                                                                                                                                                                                              |
+| Fusion            | Reciprocal Rank Fusion over the two ranked lists                                                                                | No score normalisation between cosine distance and BM25 to tune or justify                                                                                                                                                                                                                                                     |
+| Embeddings        | **`bge-small-en-v1.5`**, 384-dim, local, via `@huggingface/transformers`                                                        | Zero cost, no API key, offline, re-index in seconds. Model downloads once (~35 MB) and caches. Keeps the reviewer's required setup down to a single Anthropic key                                                                                                                                                              |
+| Answer generation | A `ChatModel` port in `packages/rag`, default adapter **`claude-opus-5`** via the Anthropic TypeScript SDK, streaming           | The one part that genuinely needs a hosted model. The port keeps the provider a configuration choice rather than a rewrite, so we can compare models on the same eval. Streaming so long answers do not hit request timeouts                                                                                                   |
+| Chunking          | Markdown heading-aware sections, merged toward ~400 tokens with overlap, never crossing a document boundary                     | Documents here are 400–1000 bytes with `#`/`##` structure, so most become one or two chunks. Splitting mid-section would break citations more than it would help recall                                                                                                                                                        |
+| Chunk metadata    | `title` from the H1, `docType` from the directory, `date` parsed from the filename, `path`                                      | Feeds citations, dashboard facets, and later filtered search. Derived from the corpus's own conventions rather than imposed on it                                                                                                                                                                                              |
+| Auth              | Own JWT + argon2id in `apps/api`; access token in an httpOnly cookie, rotating refresh token; `role` claim of `user` or `admin` | Security is an equally weighted axis and this is the part we must defend line by line. One token model protects the web API and the MCP server                                                                                                                                                                                 |
+| Authorization     | `requireAuth()` / `requireRole('admin')` enforced **server-side on every route**; hiding UI is cosmetic only                    | The case explicitly asks that the dashboard and management actions be protected from regular users, so the check lives at the API, not in the React tree                                                                                                                                                                       |
+| Validation        | zod schemas in `packages/shared`, used for request parsing _and_ as the source of the TS types                                  | One definition, no drift between what the API validates and what the client believes                                                                                                                                                                                                                                           |
 
 ### Swappable providers
 
@@ -131,13 +131,13 @@ other is the point of having a retrieval core at all:
 
 ```ts
 interface Embedder {
-  readonly id: string;          // e.g. "bge-small-en-v1.5"
-  readonly dimensions: number;  // must match the vec0 column width
+  readonly id: string; // e.g. "bge-small-en-v1.5"
+  readonly dimensions: number; // must match the vec0 column width
   embed(texts: string[]): Promise<Float32Array[]>;
 }
 
 interface ChatModel {
-  readonly id: string;          // e.g. "claude-opus-5"
+  readonly id: string; // e.g. "claude-opus-5"
   stream(req: AnswerRequest): AsyncIterable<AnswerEvent>;
 }
 ```
@@ -146,7 +146,7 @@ Selected by environment variable (`LLM_PROVIDER` / `LLM_MODEL`, `EMBEDDER`), wit
 Anthropic and local-embedding adapters shipped as the defaults. The rest of the system —
 routes, MCP tool, UI, eval — talks only to the interface.
 
-Two constraints this does *not* paper over, and which the README will state plainly:
+Two constraints this does _not_ paper over, and which the README will state plainly:
 
 - **Changing the embedder invalidates the index.** Dimensions and vector space both
   change, so the `documents` table records which embedder built it and ingestion refuses
@@ -158,7 +158,7 @@ Two constraints this does *not* paper over, and which the README will state plai
 Two corpus-specific notes worth stating out loud, because the sample questions probe them:
 
 - **Superseded documents.** `sdk-notes-v2.md` is deprecated by `sdk-notes-v3.md`, and both
-  match a query about SDK initialization. We deliberately do *not* filter the older one
+  match a query about SDK initialization. We deliberately do _not_ filter the older one
   out — the documents state their own status, so we retrieve both and let the grounded
   answer reconcile them: v3 is current, and `lumen.track` was v2 and now fails silently.
   Silently dropping v2 would produce a confident answer with no way to explain the change.
@@ -190,22 +190,22 @@ from.
 
 Each milestone ends in a working state and its own commit or commits.
 
-- [ ] **M0 — Foundation.** Repo, workspaces, TypeScript project references, ESLint + Prettier, `.gitignore`, `.env.example`, this document. *Done when:* `npm run typecheck` passes across all workspaces.
-- [ ] **M1 — Auth spine.** SQLite schema and migrations, seed script with demo `user` and `admin`, argon2id hashing, login/logout/refresh, `requireAuth` and `requireRole`. *Done when:* a regular user gets 403 from an admin route, proven by a test.
-- [ ] **M2 — Ingestion.** Corpus loader, metadata extraction, heading-aware chunker, local embedder, writes to the vec and FTS indexes in one transaction, incremental by `content_hash`, `ingestion_runs` recorded. *Done when:* `npm run ingest` indexes 142 documents and re-running it reports zero changes instead of re-embedding.
-- [ ] **M3 — Retrieval and RAG.** Vector search, BM25 search, RRF fusion, `POST /search`, `POST /answer` streaming from `claude-opus-5` with citations and a refusal path. *Done when:* all five sample questions cite the expected document and an out-of-corpus question refuses cleanly.
-- [ ] **M4 — Web.** Next.js + Tailwind, responsive on phone, tablet, and desktop: login, chat with streamed answer and clickable citations, admin dashboard covering documents, ingestion runs, index health, and search analytics. *Done when:* the dashboard is unreachable as a regular user, both in the UI and by direct URL.
-- [ ] **M5 — MCP.** MCP server wrapping `packages/rag` search, token-guarded, with connection instructions. *Done when:* an MCP client calls the tool and gets results back.
-- [ ] **M6 — Docs and proof.** README covering description, stack, install, run, demo credentials, API docs, deployment notes, and feature list; `AI_USAGE.md`; eval harness and results in `docs/`. *Done when:* a fresh clone works following only the README.
+- [ ] **M0 — Foundation.** Repo, workspaces, TypeScript project references, ESLint + Prettier, `.gitignore`, `.env.example`, this document. _Done when:_ `npm run typecheck` passes across all workspaces.
+- [ ] **M1 — Auth spine.** SQLite schema and migrations, seed script with demo `user` and `admin`, argon2id hashing, login/logout/refresh, `requireAuth` and `requireRole`. _Done when:_ a regular user gets 403 from an admin route, proven by a test.
+- [ ] **M2 — Ingestion.** Corpus loader, metadata extraction, heading-aware chunker, local embedder, writes to the vec and FTS indexes in one transaction, incremental by `content_hash`, `ingestion_runs` recorded. _Done when:_ `npm run ingest` indexes 142 documents and re-running it reports zero changes instead of re-embedding.
+- [ ] **M3 — Retrieval and RAG.** Vector search, BM25 search, RRF fusion, `POST /search`, `POST /answer` streaming from `claude-opus-5` with citations and a refusal path. _Done when:_ all five sample questions cite the expected document and an out-of-corpus question refuses cleanly.
+- [ ] **M4 — Web.** Next.js + Tailwind, responsive on phone, tablet, and desktop: login, chat with streamed answer and clickable citations, admin dashboard covering documents, ingestion runs, index health, and search analytics. _Done when:_ the dashboard is unreachable as a regular user, both in the UI and by direct URL.
+- [ ] **M5 — MCP.** MCP server wrapping `packages/rag` search, token-guarded, with connection instructions. _Done when:_ an MCP client calls the tool and gets results back.
+- [ ] **M6 — Docs and proof.** README covering description, stack, install, run, demo credentials, API docs, deployment notes, and feature list; `AI_USAGE.md`; eval harness and results in `docs/`. _Done when:_ a fresh clone works following only the README.
 
 ## 8. Risks
 
-| Risk | Mitigation |
-|---|---|
+| Risk                                                               | Mitigation                                                                                                                                                                               |
+| ------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `better-sqlite3` or `sqlite-vec` fails to build or load on Windows | Verify both install and load in M0, before anything is built on top of them. Fallback: `libsql`, or an in-process cosine scan over ~400 chunks, which is fast enough at this corpus size |
-| First-run model download makes ingestion look broken | Log the download explicitly, document it in the README, cache it under a gitignored directory |
-| Tiny documents make chunk-level retrieval noisy | Retrieve chunks but deduplicate citations up to documents; tune `k` against the eval rather than by feel |
-| Two days is not much time | Milestones are ordered so that stopping after M4 still yields a coherent, honest system |
+| First-run model download makes ingestion look broken               | Log the download explicitly, document it in the README, cache it under a gitignored directory                                                                                            |
+| Tiny documents make chunk-level retrieval noisy                    | Retrieve chunks but deduplicate citations up to documents; tune `k` against the eval rather than by feel                                                                                 |
+| Two days is not much time                                          | Milestones are ordered so that stopping after M4 still yields a coherent, honest system                                                                                                  |
 
 ## 9. Conventions
 
