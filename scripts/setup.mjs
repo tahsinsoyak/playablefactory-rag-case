@@ -80,7 +80,9 @@ function prepareEnv() {
   }
 
   const key = readVar(env, 'OPENROUTER_API_KEY').replace(/^['"]|['"]$/g, '');
-  const hasKey = key.startsWith('sk-or-');
+  // `sk-or-...` is the placeholder in .env.example and passes a naive prefix
+  // check, which would report a key as configured when none is.
+  const hasKey = key.startsWith('sk-or-') && !key.endsWith('...') && key.length > 20;
 
   if (hasKey) {
     note('OPENROUTER_API_KEY is set');
@@ -118,9 +120,12 @@ async function main() {
 
   step('3/3  Index the corpus');
   note('first run downloads the embedding model, about 35 MB, then it is cached');
+  // Quiet: 142 "added" lines is noise during setup, and the summary says what
+  // matters. `npm run ingest` on its own still lists every change.
   await run('ingest', [
     resolve(repoRoot, 'node_modules/tsx/dist/cli.mjs'),
     'apps/api/src/scripts/ingest.ts',
+    '--quiet',
   ]);
 
   process.stdout.write('\n\x1b[1mReady.\x1b[0m Start it with:\n\n');
