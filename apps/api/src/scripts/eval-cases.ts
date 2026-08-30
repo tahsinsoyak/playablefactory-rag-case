@@ -22,6 +22,22 @@ export interface EvalCase {
   group: EvalGroup;
   /** Documents a good answer must cite. Empty means the corpus cannot answer it. */
   expected: string[];
+  /**
+   * Documents a good answer may also cite without being marked down.
+   *
+   * Added after the first answer-quality run, where citation precision read 76%
+   * largely because correct behaviour was being punished. The SDK question is
+   * the clearest case: the corpus ships a deprecated v2 note alongside v3, and
+   * the case itself says a good answer should mention the deprecation, so citing
+   * both is right. Scoring every citation outside a single expected path as
+   * noise measured the narrowness of the label rather than the quality of the
+   * answer.
+   *
+   * This is not a licence to cite anything. Documents that merely mention the
+   * subject stay unlisted and still cost precision: six delivery reports for
+   * "who is the client" is over-citation, not context.
+   */
+  acceptable?: string[];
   note?: string;
 }
 
@@ -36,18 +52,24 @@ export const EVAL_CASES: EvalCase[] = [
     question: 'How do I initialize the current Lumen SDK, and what happened to lumen.track?',
     group: 'sample',
     expected: ['sdk-notes-v3.md'],
+    // The case asks for the deprecation to be mentioned, so citing v2 is correct.
+    acceptable: ['sdk-notes-v2.md'],
     note: 'sdk-notes-v2.md is deprecated; a good answer says so',
   },
   {
     question: 'Why are sound assets built in a separate pass?',
     group: 'sample',
     expected: ['build-pipeline.md'],
+    acceptable: ['incident-postmortem-2026-03.md'],
     note: 'incident-postmortem-2026-03.md adds useful context',
   },
   {
     question: 'What caused the March 2026 AppLovin rejections and what was fixed?',
     group: 'sample',
     expected: ['incident-postmortem-2026-03.md'],
+    // The changelog records the fix that shipped, so citing it is supporting
+    // evidence rather than noise.
+    acceptable: ['changelogs/lumen-build-4.2.md', 'build-pipeline.md'],
   },
   {
     question: 'Which languages must every playable ship with, and what is the fallback?',
@@ -90,6 +112,8 @@ export const EVAL_CASES: EvalCase[] = [
     question: 'What has to be done before every client delivery?',
     group: 'sample',
     expected: ['qa-checklist.md'],
+    // The review process is genuinely part of what happens before delivery.
+    acceptable: ['guides/review-process.md'],
   },
   {
     question: 'What is the primary engagement metric?',

@@ -31,8 +31,10 @@ Main features:
   documents by content hash and re-embeds only the difference.
 - **Role-based access.** Regular users can search; the dashboard, corpus management, and
   user administration are admin-only, enforced server-side.
-- **A retrieval eval** that scores hit@k and MRR across the sample questions and checks
-  that out-of-corpus questions are refused.
+- **A retrieval eval** that scores hit@k and MRR across 26 cases and checks that
+  out-of-corpus questions are refused.
+- **An answer-quality eval** that scores citations, grounding, and the answer-or-refuse
+  decision without a model, then asks a judge model the part that needs an opinion.
 - **User management**. Admins can list users and change roles, with a guard against
   demoting yourself out of the last admin account.
 
@@ -470,6 +472,46 @@ out-of-corpus probes:
 | keyword    | 100%  | 0.800     | 3/3                   |
 
 Hybrid earns its place: it ranks the expected document first every time.
+
+## Answer quality
+
+Retrieval quality and answer quality are different questions, so they have different evals.
+`npm run eval` asks whether the right passages come back. `npm run eval:answers` asks what
+was done with them.
+
+Deterministic checks run first, because they need no opinion and cost nothing:
+
+| Measure                                   | Result                |
+| ----------------------------------------- | --------------------- |
+| Answer-or-refuse decision correct         | **100%** (26 cases)   |
+| Citation recall (required document cited) | 90%                   |
+| Citation precision                        | 79%                   |
+| Figures traceable to the cited passages   | **100%** (17 checked) |
+
+The grounding check pulls every number and identifier out of the answer and looks for it in
+the passages that answer cited, not merely in everything retrieved. An answer citing document
+A while taking its figures from document B is not grounded in what it claimed. Invented
+figures are the most damaging failure and the easiest to catch mechanically, so no model is
+asked about them.
+
+Then a judge model scores the part that genuinely needs judgement:
+
+| Measure                                          | Result       |
+| ------------------------------------------------ | ------------ |
+| Faithful (every claim traceable to the passages) | **26/26**    |
+| Relevant (answers what was actually asked)       | **26/26**    |
+| Mean score                                       | **4.92 / 5** |
+
+Three constraints keep the verdicts meaningful. The judge never sees which document was
+expected, so it scores support by the evidence rather than agreement with a label. It judges
+only against the passages the answer cited. And `JUDGE_MODEL` defaults to a different, stronger
+model than `LLM_MODEL`, because a model grading its own output rates it generously; the report
+records both so a reader can check they differed.
+
+```bash
+npm run eval:answers            # deterministic only, one model call per case
+npm run eval:answers -- --judge # adds a judge call per case
+```
 
 ## Project layout
 

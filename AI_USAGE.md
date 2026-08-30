@@ -396,6 +396,43 @@ rule and never gives a reason for it. The case was measuring my question, not th
 _Caught by:_ chasing a refusal that looked like a bug and reading the source document.
 Reworded to something the corpus actually answers, with the reason recorded next to it.
 
+## Bonus: answer-quality scoring
+
+**What I decided:** that most of this should not use a model at all. Whether "5 MB" appears
+in the text an answer cited is a string search, and paying a model to have an opinion about
+it would add cost, latency, and a source of disagreement to a question with a definite
+answer. So the deterministic checks run first, and the judge is asked only the part that
+genuinely needs judgement.
+
+The grounding check compares the answer's figures against the passages it _cited_, not
+against everything retrieved. An answer citing document A while taking its numbers from
+document B is not grounded in what it claimed, and that distinction is the whole point.
+
+**Where it got things wrong:**
+
+**19. The judge was right and the harness was lying to it.** Three answers came back marked
+UNFAITHFUL, with the judge reporting citations like `[7]` as fabricated. They were not: the
+harness handed the judge only the _cited_ passages, renumbered from one, while the answer's
+markers referred to the original numbering across everything retrieved. In the list the judge
+had been given, `[7]` genuinely did not exist. Fixing the numbering moved the mean score from
+4.62 to 4.92 and unfaithful verdicts from 3 to 0. _Caught by:_ reading all three verdicts
+instead of the summary, and noticing they were the same complaint. Three independent
+"hallucinations" that are all the same shape are usually one bug in the measurement.
+
+**20. The citation metric punished correct behaviour.** Precision read 76% largely because
+`expected` named a single document, so an answer citing the deprecated SDK note alongside the
+current one was marked down, even though the case explicitly says a good answer should mention
+the deprecation. Added an `acceptable` list for documents that legitimately support an answer.
+This is a metric loosened after seeing results, which deserves suspicion, so the constraint is
+recorded next to it: documents that merely mention the subject stay unlisted and still cost
+precision. Six delivery reports for "who is the client" is over-citation, not context, and
+still scores as such.
+
+**A note on what these numbers are worth.** The judge is `claude-sonnet-5` and the answering
+model is `qwen3.7-flash`, deliberately different, because a model grading its own output rates
+it generously. The judge also never sees which document was expected. Both are recorded in the
+report so a reader can check the setup rather than take 4.92 on faith.
+
 ---
 
 ## Overall

@@ -24,7 +24,8 @@
     "ingest": "tsx apps/api/src/scripts/ingest.ts",
     "eval": "tsx apps/api/src/scripts/eval.ts",
     "prepare": "tsc --build",
-    "dev:mcp": "tsx apps/mcp/src/http/index.ts"
+    "dev:mcp": "tsx apps/mcp/src/http/index.ts",
+    "eval:answers": "tsx apps/api/src/scripts/eval-answers.ts"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

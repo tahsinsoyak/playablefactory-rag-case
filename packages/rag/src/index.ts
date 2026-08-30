@@ -17,3 +17,6 @@ export * from './ingest/ingest.js';
 export * from './reranking/index.js';
 export * from './retrieval/retriever.js';
 export * from './generation/index.js';
+export * from './generation/completion.js';
+export * from './evaluation/grounding.js';
+export * from './evaluation/judge.js';

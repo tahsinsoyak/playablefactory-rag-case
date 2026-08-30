@@ -37,6 +37,10 @@ const configSchema = z.object({
   LLM_PROVIDER: z.enum(['openrouter', 'anthropic']).default('openrouter'),
   LLM_MODEL: z.string().default('anthropic/claude-opus-5'),
   OPENROUTER_API_KEY: z.string().optional(),
+  // The model that scores answers in the answer-quality eval. Defaults to a
+  // stronger and different model than LLM_MODEL: a model grading its own output
+  // rates it generously, so judge and candidate should not be the same.
+  JUDGE_MODEL: z.string().default('anthropic/claude-sonnet-5'),
   ANTHROPIC_API_KEY: z.string().optional(),
 
   // Rejected rather than defaulted: a fallback secret is a vulnerability that

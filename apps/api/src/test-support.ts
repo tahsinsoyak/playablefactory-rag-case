@@ -26,6 +26,7 @@ export const TEST_CONFIG: Config = {
   MODEL_CACHE_DIR: fromRepoRoot('.models'),
   LLM_PROVIDER: 'anthropic',
   LLM_MODEL: 'claude-opus-5',
+  JUDGE_MODEL: 'anthropic/claude-sonnet-5',
   JWT_ACCESS_SECRET: 'test-access-secret-that-is-long-enough',
   JWT_REFRESH_SECRET: 'test-refresh-secret-that-is-long-enough',
   ACCESS_TOKEN_TTL: '15m',
