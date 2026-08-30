@@ -1,0 +1,6 @@
+# Normalise line endings so corpus content hashes are stable across machines.
+* text=auto eol=lf
+*.png binary
+*.jpg binary
+*.pdf binary
+*.zip binary

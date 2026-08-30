@@ -1,0 +1,38 @@
+# dependencies
+node_modules/
+.npm/
+
+# build output
+dist/
+build/
+.next/
+out/
+*.tsbuildinfo
+
+# environment / secrets
+.env
+.env.*
+!.env.example
+
+# local database + embedding model cache
+*.db
+*.db-shm
+*.db-wal
+data/
+.models/
+
+# case material — provided to us, not ours to redistribute
+PlayableFactory_AI_SE_Case_RAG.pdf
+sampledataset.zip
+
+# logs / coverage / temp
+*.log
+npm-debug.log*
+coverage/
+.tmp/
+
+# editors / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
