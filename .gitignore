@@ -36,3 +36,7 @@ coverage/
 .idea/
 .DS_Store
 Thumbs.db
+
+# Next.js build output and generated agent guide
+apps/web/.next/
+apps/web/next-env.d.ts

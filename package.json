@@ -12,12 +12,14 @@
     "apps/*"
   ],
   "scripts": {
-    "typecheck": "tsc --build",
+    "typecheck": "tsc --build && npm run typecheck --workspace=@corpus/web",
     "typecheck:clean": "tsc --build --clean",
     "lint": "eslint .",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "test": "npm run test --workspaces --if-present"
+    "test": "npm run test --workspaces --if-present",
+    "build": "tsc --build && npm run build --workspace=@corpus/web",
+    "dev": "npm run dev --workspace=@corpus/api & npm run dev --workspace=@corpus/web"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

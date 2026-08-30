@@ -1,0 +1,46 @@
+@import 'tailwindcss';
+
+/*
+ * A small token set rather than raw colours scattered through components, and
+ * defined for both schemes so the app follows the reader's system preference.
+ */
+@theme {
+  --color-surface: oklch(99% 0.004 260);
+  --color-surface-raised: oklch(100% 0 0);
+  --color-border: oklch(91% 0.006 260);
+  --color-ink: oklch(24% 0.02 260);
+  --color-ink-muted: oklch(52% 0.017 260);
+  --color-accent: oklch(55% 0.19 265);
+  --color-accent-soft: oklch(95% 0.03 265);
+}
+
+@media (prefers-color-scheme: dark) {
+  @theme {
+    --color-surface: oklch(19% 0.015 260);
+    --color-surface-raised: oklch(23% 0.017 260);
+    --color-border: oklch(32% 0.02 260);
+    --color-ink: oklch(95% 0.008 260);
+    --color-ink-muted: oklch(70% 0.02 260);
+    --color-accent: oklch(72% 0.15 265);
+    --color-accent-soft: oklch(30% 0.06 265);
+  }
+}
+
+html {
+  color-scheme: light dark;
+}
+
+body {
+  background-color: var(--color-surface);
+  color: var(--color-ink);
+}
+
+/* Respect a reader who has asked for less motion. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
