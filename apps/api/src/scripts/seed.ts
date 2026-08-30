@@ -6,6 +6,8 @@
 import { loadConfig } from '../config.js';
 import { initDatabase } from '../db/index.js';
 import { upsertUser } from '../auth/users.js';
+import { upsertClient } from '../oidc/clients.js';
+import { SEARCH_SCOPE } from '../oidc/tokens.js';
 
 async function main(): Promise<void> {
   const config = loadConfig();
@@ -27,6 +29,25 @@ async function main(): Promise<void> {
   for (const account of accounts) {
     const user = await upsertUser(db, account);
     console.log(`seeded ${user.role.padEnd(5)} ${user.email}`);
+  }
+
+  // The OAuth client the MCP server's HTTP transport authorises against.
+  // Without a configured secret the client is skipped rather than seeded with a
+  // guessable default: a default credential is worse than no credential.
+  const mcpSecret = process.env['MCP_CLIENT_SECRET'];
+  const mcpClientId = process.env['MCP_CLIENT_ID'] ?? 'corpus-mcp';
+
+  if (mcpSecret) {
+    await upsertClient(db, {
+      clientId: mcpClientId,
+      secret: mcpSecret,
+      role: 'user',
+      scopes: [SEARCH_SCOPE],
+      description: 'MCP client allowed to search the corpus',
+    });
+    console.log(`seeded client ${mcpClientId} (scope ${SEARCH_SCOPE})`);
+  } else {
+    console.log('skipped the MCP OAuth client: set MCP_CLIENT_SECRET in .env to enable it');
   }
 
   db.close();

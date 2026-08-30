@@ -234,6 +234,10 @@ accepts only `hybrid` and `vector`, see the design notes.
 
 ## Connecting an MCP client
 
+There are two transports. Which one you want depends on where the client runs.
+
+### stdio, for a desktop client on this machine
+
 The server speaks stdio, which is what desktop MCP clients launch. Build first, then point
 your client at it. For Claude Desktop or Claude Code, add:
 
@@ -265,6 +269,49 @@ Verify it without a client:
 ```bash
 npm run smoke --workspace=@corpus/mcp
 ```
+
+### HTTP, protected by OIDC
+
+stdio needs no authentication: the client launches the process, owns its lifetime, and
+nothing listens on a port. The moment the same tools are reachable over the network that
+stops being true, so the HTTP transport requires an OAuth 2.0 access token.
+
+```bash
+npm run dev:mcp      # http://localhost:4100/mcp
+```
+
+The API doubles as the OpenID Provider. It publishes discovery and JWKS, and issues RS256
+tokens through the `client_credentials` grant, which is the right flow here because the
+thing being authorised is a program, not a person:
+
+| Endpoint                                               | What it is                                                       |
+| ------------------------------------------------------ | ---------------------------------------------------------------- |
+| `GET /.well-known/openid-configuration`                | Provider metadata: token endpoint, JWKS, grants, scopes          |
+| `GET /.well-known/jwks.json`                           | Public keys. The private key never leaves the API                |
+| `POST /oauth/token`                                    | `client_credentials` grant, secret in the body or via HTTP Basic |
+| `GET /.well-known/oauth-protected-resource` (on :4100) | Tells a client which issuer to use                               |
+
+Get a token and call the tool:
+
+```bash
+TOKEN=$(curl -s -X POST http://localhost:4000/oauth/token   -H 'content-type: application/json'   -d '{"grant_type":"client_credentials","client_id":"corpus-mcp","client_secret":"<MCP_CLIENT_SECRET>"}'   | node -e "let d='';process.stdin.on('data',c=>d+=c).on('end',()=>console.log(JSON.parse(d).access_token))")
+
+curl -X POST http://localhost:4100/mcp   -H "Authorization: Bearer $TOKEN"   -H 'content-type: application/json'   -H 'Accept: application/json, text/event-stream'   -d '{"jsonrpc":"2.0","id":1,"method":"tools/list","params":{}}'
+```
+
+`npm run seed` registers the `corpus-mcp` client, using `MCP_CLIENT_SECRET` from `.env`. If
+that variable is unset the client is skipped rather than created with a default secret,
+because a default credential is worse than no credential.
+
+**What the resource server checks.** Signature against the provider's JWKS, issuer,
+audience, expiry, and scope. The audience check is RFC 8707 resource indicators: a token is
+minted for `http://localhost:4100/mcp` specifically, so if it leaks it cannot be replayed
+against the main API. The MCP server holds no key material at all, only the public keys it
+fetches, so it can decide whether a token is genuine and cannot mint one.
+
+**Using a real identity provider instead.** Nothing in the resource server knows who signed.
+Point `OIDC_ISSUER` at Auth0, Keycloak, or Entra, register the resource as an audience
+there, and it verifies against their JWKS with no code change.
 
 ## Choosing a model
 
@@ -426,12 +473,6 @@ horizontally scalable without touching retrieval, the routes, or the MCP server.
 
 Stated plainly rather than half-built:
 
-- **MCP authentication via OIDC.** The stdio transport is local and the client owns the
-  process, so there is no network surface to protect in this configuration. Exposing the
-  server over HTTP would need real authentication: an OIDC-protected HTTP transport
-  validating a bearer JWT against the provider's JWKS, mapping the verified subject to a
-  user, and reusing the same role checks the API already applies. That is the honest gap.
-  The groundwork is there, the OIDC flow is not.
 - **A live deployment.** See above for how.
 - **Answer-quality scoring.** The eval measures retrieval quantitatively; answer quality is
   checked by reading the output of `npm run eval -- --answers`, not scored.

@@ -331,6 +331,32 @@ ships as two tokens because one will not do both jobs: as a fill under near-blac
 reaches 5.8:1, but as text on a light surface it is 2.9:1 and fails AA, so the text token is
 a deepened `#B35708` at 4.9:1, lightened to `#F2853A` on dark. Every ratio was computed.
 
+## Bonus: MCP authentication via OIDC
+
+**What I decided:** that the provider had to be bundled rather than delegated to Auth0 or
+Keycloak. The case is graded on running from the README on a fresh machine, and an external
+identity provider means an account, a tenant, and a set of secrets a reviewer has to create
+before anything works. A small self-contained provider keeps that promise, and because the
+resource server verifies through discovery and JWKS rather than anything local, pointing it
+at a real provider is a change of one environment variable.
+
+**What AI did:** wrote the signing key handling, the token endpoint, the client registry,
+the JWKS-backed verifier, the Streamable HTTP transport, and the tests.
+
+**Two decisions worth defending in the walkthrough.** RS256 rather than the HS256 the app
+uses for its own session cookies, because the token is verified by a _different process_: a
+shared secret would give the MCP server the power to mint tokens as well as check them,
+where a public key lets it only verify. And RFC 8707 resource indicators, so a token is
+minted for `http://localhost:4100/mcp` specifically and cannot be replayed against the main
+API if it leaks. There is a test for exactly that.
+
+**Where it got things wrong:** two assertions in the new tests looked for the words
+"audience" and "issuer" in the rejection message, but jose reports `unexpected "aud" claim
+value`. The tokens were being rejected correctly the whole time; the tests were checking for
+the wrong string, which is the kind of failure that looks like a product bug for about a
+minute. _Caught by:_ reading the actual assertion output rather than assuming a red test
+meant broken code.
+
 ---
 
 ## Overall

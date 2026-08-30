@@ -60,4 +60,21 @@ export const apiMigrations: Migration[] = [
       `);
     },
   },
+  {
+    id: '003-oauth-clients',
+    up: (db) => {
+      // Client secrets are argon2-hashed like user passwords: a client secret is
+      // a credential, and reading the database should not yield a working one.
+      db.exec(`
+        create table oauth_clients (
+          client_id   text primary key,
+          secret_hash text not null,
+          role        text not null check (role in ('user', 'admin')),
+          scopes      text not null,
+          description text not null default '',
+          created_at  text not null default (datetime('now'))
+        );
+      `);
+    },
+  },
 ];

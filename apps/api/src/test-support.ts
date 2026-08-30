@@ -29,6 +29,12 @@ export const TEST_CONFIG: Config = {
   JWT_REFRESH_SECRET: 'test-refresh-secret-that-is-long-enough',
   ACCESS_TOKEN_TTL: '15m',
   REFRESH_TOKEN_TTL: '7d',
+  OIDC_ISSUER: 'http://localhost:4000',
+  MCP_RESOURCE: 'http://localhost:4100/mcp',
+  OIDC_TOKEN_TTL_SECONDS: 3600,
+  DATA_DIR: fromRepoRoot('data'),
+  MCP_CLIENT_ID: 'corpus-mcp',
+  MCP_HTTP_PORT: 4100,
 };
 
 export const TEST_USER = {

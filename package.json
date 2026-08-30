@@ -23,7 +23,8 @@
     "seed": "tsx apps/api/src/scripts/seed.ts",
     "ingest": "tsx apps/api/src/scripts/ingest.ts",
     "eval": "tsx apps/api/src/scripts/eval.ts",
-    "prepare": "tsc --build"
+    "prepare": "tsc --build",
+    "dev:mcp": "tsx apps/mcp/src/http/index.ts"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

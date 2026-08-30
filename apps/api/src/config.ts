@@ -42,7 +42,18 @@ const configSchema = z.object({
   ACCESS_TOKEN_TTL: z.string().default('15m'),
   REFRESH_TOKEN_TTL: z.string().default('7d'),
 
-  MCP_AUTH_TOKEN: z.string().optional(),
+  // --- OIDC provider, used to authorise MCP clients ---
+  // The issuer must be the URL clients can actually reach, because it is both
+  // the `iss` claim and the base for discovery.
+  OIDC_ISSUER: z.string().default('http://localhost:4000'),
+  // RFC 8707 resource indicator: which resource server tokens are minted for.
+  MCP_RESOURCE: z.string().default('http://localhost:4100/mcp'),
+  OIDC_TOKEN_TTL_SECONDS: z.coerce.number().int().positive().default(3600),
+  // Where the generated signing key and the database live. Gitignored.
+  DATA_DIR: z.string().default('./data'),
+  MCP_CLIENT_ID: z.string().default('corpus-mcp'),
+  MCP_CLIENT_SECRET: z.string().optional(),
+  MCP_HTTP_PORT: z.coerce.number().int().positive().default(4100),
 });
 
 export type Config = z.infer<typeof configSchema>;
@@ -66,6 +77,7 @@ export function loadConfig(): Config {
   cached = {
     ...parsed.data,
     DATABASE_PATH: fromRepoRoot(parsed.data.DATABASE_PATH),
+    DATA_DIR: fromRepoRoot(parsed.data.DATA_DIR),
     CORPUS_DIR: fromRepoRoot(parsed.data.CORPUS_DIR),
     MODEL_CACHE_DIR: fromRepoRoot(parsed.data.MODEL_CACHE_DIR),
   };
