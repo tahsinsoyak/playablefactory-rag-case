@@ -108,7 +108,6 @@ async function main(): Promise<void> {
   ];
 
   const answerable = CASES.filter((c) => c.expected.length > 0);
-  const unanswerable = CASES.filter((c) => c.expected.length === 0);
 
   for (const mode of MODES) {
     const results: CaseResult[] = [];
