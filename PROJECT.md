@@ -116,12 +116,44 @@ server from becoming a second, drifting implementation of search.
 | Keyword half | SQLite **FTS5** in the same database | Hybrid retrieval for almost no extra code or infra; one transaction keeps both indexes consistent |
 | Fusion | Reciprocal Rank Fusion over the two ranked lists | No score normalisation between cosine distance and BM25 to tune or justify |
 | Embeddings | **`bge-small-en-v1.5`**, 384-dim, local, via `@huggingface/transformers` | Zero cost, no API key, offline, re-index in seconds. Model downloads once (~35 MB) and caches. Keeps the reviewer's required setup down to a single Anthropic key |
-| Answer generation | **`claude-opus-5`** via the Anthropic TypeScript SDK, streaming | The one part that genuinely needs a hosted model. Streaming so long answers do not hit request timeouts |
+| Answer generation | A `ChatModel` port in `packages/rag`, default adapter **`claude-opus-5`** via the Anthropic TypeScript SDK, streaming | The one part that genuinely needs a hosted model. The port keeps the provider a configuration choice rather than a rewrite, so we can compare models on the same eval. Streaming so long answers do not hit request timeouts |
 | Chunking | Markdown heading-aware sections, merged toward ~400 tokens with overlap, never crossing a document boundary | Documents here are 400–1000 bytes with `#`/`##` structure, so most become one or two chunks. Splitting mid-section would break citations more than it would help recall |
 | Chunk metadata | `title` from the H1, `docType` from the directory, `date` parsed from the filename, `path` | Feeds citations, dashboard facets, and later filtered search. Derived from the corpus's own conventions rather than imposed on it |
 | Auth | Own JWT + argon2id in `apps/api`; access token in an httpOnly cookie, rotating refresh token; `role` claim of `user` or `admin` | Security is an equally weighted axis and this is the part we must defend line by line. One token model protects the web API and the MCP server |
 | Authorization | `requireAuth()` / `requireRole('admin')` enforced **server-side on every route**; hiding UI is cosmetic only | The case explicitly asks that the dashboard and management actions be protected from regular users, so the check lives at the API, not in the React tree |
 | Validation | zod schemas in `packages/shared`, used for request parsing *and* as the source of the TS types | One definition, no drift between what the API validates and what the client believes |
+
+### Swappable providers
+
+Two things are deliberately behind narrow interfaces in `packages/rag`, because both are
+choices we may want to revisit and because being able to change one without touching the
+other is the point of having a retrieval core at all:
+
+```ts
+interface Embedder {
+  readonly id: string;          // e.g. "bge-small-en-v1.5"
+  readonly dimensions: number;  // must match the vec0 column width
+  embed(texts: string[]): Promise<Float32Array[]>;
+}
+
+interface ChatModel {
+  readonly id: string;          // e.g. "claude-opus-5"
+  stream(req: AnswerRequest): AsyncIterable<AnswerEvent>;
+}
+```
+
+Selected by environment variable (`LLM_PROVIDER` / `LLM_MODEL`, `EMBEDDER`), with the
+Anthropic and local-embedding adapters shipped as the defaults. The rest of the system —
+routes, MCP tool, UI, eval — talks only to the interface.
+
+Two constraints this does *not* paper over, and which the README will state plainly:
+
+- **Changing the embedder invalidates the index.** Dimensions and vector space both
+  change, so the `documents` table records which embedder built it and ingestion refuses
+  to append to an index built by a different one. Switching embedders means a full
+  re-index, which at this corpus size is seconds.
+- **Changing the chat model does not invalidate anything**, which is exactly why it is
+  worth making cheap: run the eval against two models and pick on evidence.
 
 Two corpus-specific notes worth stating out loud, because the sample questions probe them:
 
