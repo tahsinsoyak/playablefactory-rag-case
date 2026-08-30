@@ -9,6 +9,19 @@ export default tseslint.config(
   eslint.configs.recommended,
   ...tseslint.configs.recommended,
   {
+    // Plain Node scripts get their globals from tsconfig's `types` everywhere
+    // else; this file is not part of a TS project, so declare them here.
+    files: ['scripts/**/*.mjs'],
+    languageOptions: {
+      globals: {
+        process: 'readonly',
+        console: 'readonly',
+        setTimeout: 'readonly',
+        clearTimeout: 'readonly',
+      },
+    },
+  },
+  {
     rules: {
       // The plan commits to no `any` in committed code; make that enforceable
       // rather than aspirational.

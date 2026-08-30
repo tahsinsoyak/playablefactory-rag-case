@@ -1,34 +1,14 @@
 import { after, before, describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import type { FastifyInstance } from 'fastify';
-import { openDatabase, runMigrations, corpusMigrations, type Db } from '@corpus/rag';
-import { apiMigrations } from '../db/schema.js';
-import { buildServer } from '../server.js';
-import { createUser } from './users.js';
-import type { Config } from '../config.js';
 import { ACCESS_COOKIE, REFRESH_COOKIE } from './middleware.js';
+import { TEST_ADMIN, TEST_USER, buildTestApp, type TestApp } from '../test-support.js';
 
-const TEST_CONFIG: Config = {
-  NODE_ENV: 'test',
-  API_PORT: 0,
-  WEB_ORIGIN: 'http://localhost:3000',
-  DATABASE_PATH: ':memory:',
-  CORPUS_DIR: './corpus',
-  EMBEDDER: 'local:bge-small-en-v1.5',
-  MODEL_CACHE_DIR: './.models',
-  LLM_PROVIDER: 'anthropic',
-  LLM_MODEL: 'claude-opus-5',
-  JWT_ACCESS_SECRET: 'test-access-secret-that-is-long-enough',
-  JWT_REFRESH_SECRET: 'test-refresh-secret-that-is-long-enough',
-  ACCESS_TOKEN_TTL: '15m',
-  REFRESH_TOKEN_TTL: '7d',
-};
+const USER = TEST_USER;
+const ADMIN = TEST_ADMIN;
 
-const USER = { email: 'user@test.local', password: 'user-password', role: 'user' as const };
-const ADMIN = { email: 'admin@test.local', password: 'admin-password', role: 'admin' as const };
-
+let harness: TestApp;
 let app: FastifyInstance;
-let db: Db;
 
 /** Pulls one cookie value out of a login response's `set-cookie` headers. */
 function cookieFrom(response: { headers: Record<string, unknown> }, name: string): string {
@@ -44,16 +24,12 @@ async function login(email: string, password: string) {
 }
 
 before(async () => {
-  db = openDatabase({ path: ':memory:' });
-  runMigrations(db, [...corpusMigrations, ...apiMigrations]);
-  await createUser(db, USER);
-  await createUser(db, ADMIN);
-  app = await buildServer({ db, config: TEST_CONFIG });
+  harness = await buildTestApp();
+  app = harness.app;
 });
 
 after(async () => {
-  await app.close();
-  db.close();
+  await harness.close();
 });
 
 describe('authentication', () => {

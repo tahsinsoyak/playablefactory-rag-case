@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import type { DocumentListResponse, IndexHealth, IngestionRun, SearchStats } from '@corpus/shared';
 import { apiFetch, ApiRequestError } from '@/lib/api';
+import { UserAdmin } from './UserAdmin';
 
 function Stat({ label, value, hint }: { label: string; value: string; hint?: string }) {
   return (
@@ -19,7 +20,7 @@ function formatDate(iso: string | null): string {
   return new Date(iso).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' });
 }
 
-export function Dashboard() {
+export function Dashboard({ currentUserId }: { currentUserId: string }) {
   const [health, setHealth] = useState<IndexHealth | null>(null);
   const [runs, setRuns] = useState<IngestionRun[]>([]);
   const [stats, setStats] = useState<SearchStats | null>(null);
@@ -283,6 +284,8 @@ export function Dashboard() {
           </table>
         </div>
       </section>
+
+      <UserAdmin currentUserId={currentUserId} />
     </div>
   );
 }

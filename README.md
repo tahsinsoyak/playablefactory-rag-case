@@ -30,6 +30,8 @@ Main features:
   user administration are admin-only, enforced server-side.
 - **A retrieval eval** that scores hit@k and MRR across the sample questions and checks
   that out-of-corpus questions are refused.
+- **User management** — admins can list users and change roles, with a guard against
+  demoting yourself out of the last admin account.
 
 ## Technology stack
 
@@ -106,13 +108,13 @@ second.
 
 ## Running the application
 
-Two servers. Either run both at once:
+Two servers. Either run both at once — output from each is prefixed, and Ctrl+C stops both:
 
 ```bash
 npm run dev
 ```
 
-or in separate terminals, which gives cleaner logs:
+or in separate terminals, if you prefer unmixed logs:
 
 ```bash
 npm run dev --workspace=@corpus/api   # http://localhost:4000
@@ -140,7 +142,7 @@ re-run `npm run seed`.
 | `npm run ingest -- --force`             | Re-embed everything (needed after a chunking change)               |
 | `npm run eval`                          | Score retrieval, write `docs/eval-results.md` — no API key needed  |
 | `npm run eval -- --answers`             | Also generate answers for each case (calls the model, costs money) |
-| `npm test`                              | Run the test suites                                                |
+| `npm test`                              | Run the test suites (56 tests)                                     |
 | `npm run typecheck` / `lint` / `format` | The three checks every commit must pass                            |
 | `npm run smoke --workspace=@corpus/mcp` | Connect an MCP client to the server and call the tool              |
 

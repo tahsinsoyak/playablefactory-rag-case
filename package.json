@@ -19,7 +19,7 @@
     "format:check": "prettier --check .",
     "test": "npm run test --workspaces --if-present",
     "build": "tsc --build && npm run build --workspace=@corpus/web",
-    "dev": "npm run dev --workspace=@corpus/api & npm run dev --workspace=@corpus/web",
+    "dev": "node scripts/dev.mjs",
     "seed": "npm run seed --workspace=@corpus/api",
     "ingest": "npm run ingest --workspace=@corpus/api",
     "eval": "npm run eval --workspace=@corpus/api"

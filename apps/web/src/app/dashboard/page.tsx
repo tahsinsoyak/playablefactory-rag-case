@@ -18,7 +18,7 @@ export default async function DashboardPage() {
         </p>
       </div>
 
-      <Dashboard />
+      <Dashboard currentUserId={user.id} />
     </AppShell>
   );
 }

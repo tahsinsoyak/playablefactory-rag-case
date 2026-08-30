@@ -218,6 +218,38 @@ because the underlying code did. Fixed by anchoring paths to the workspace root.
 that root-walking helper got written twice before being consolidated — duplication lint
 cannot catch and a reader would have to spot.
 
+## Post-M6 — finishing passes
+
+**11. `npm run dev` never started the web app on Windows.** The root script was
+`npm run dev -w api & npm run dev -w web`. On Linux and macOS `&` backgrounds the first
+command; npm on Windows runs scripts through `cmd.exe`, where `&` is a _sequential_
+separator. So the API started, blocked forever, and the web server was never reached — and
+this was the README's headline "run both at once" instruction. _Caught by:_ actually running
+it, after the README claimed it worked. A one-line probe confirmed the shell semantics
+rather than assuming them.
+
+_Fixed by:_ a small `scripts/dev.mjs` that spawns both, prefixes their output, and stops
+both on Ctrl+C. Getting there took two more corrections, both Windows-specific and both
+found by running it again: spawning `npm.cmd` fails outright on Node 24 (`spawn EINVAL`,
+because Node now refuses to launch a `.cmd` shim without a shell), and passing arguments
+with `shell: true` triggers a deprecation warning that would greet the reviewer on every
+start (DEP0190, arguments concatenated unescaped). Both disappear when the JS entry points
+are run with `node` directly, which also needs no new dependency.
+
+**12. Route protection was asserted for one endpoint, not the set.** The M1 tests proved a
+regular user gets 403 from `/admin/users`. Seven other admin routes had no such test, so the
+protection was really only verified where someone had remembered to look. Replaced with a
+table-driven suite covering every admin route for both anonymous and regular-user callers,
+plus a positive case proving an admin still gets through — otherwise a route broken for
+everyone would pass as "correctly refused". That immediately found `/index/health` returning
+500 under test: it reads the corpus from disk, and the test config's relative `CORPUS_DIR`
+resolved against the workspace rather than the repo root. The same class of bug as
+correction 10, in the one place I had not looked.
+
+The test fixture was also duplicated verbatim across the two suites before being factored
+into `test-support.ts`. A fixture that drifts between suites is worse than none, because the
+suites quietly stop testing the same system.
+
 ---
 
 ## Overall
