@@ -9,7 +9,7 @@ export type { LocalEmbedderOptions };
  *
  * The spec is `provider:model`, so adding a hosted embedder later means adding a
  * branch here and nothing else. Unknown specs throw at startup rather than
- * falling back to a default — silently embedding with the wrong model would
+ * falling back to a default. Silently embedding with the wrong model would
  * produce an index that looks fine and retrieves badly.
  */
 export function createEmbedder(spec: string, options: LocalEmbedderOptions = {}): Embedder {

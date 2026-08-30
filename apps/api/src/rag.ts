@@ -42,7 +42,7 @@ export interface RagContext {
  * Wires the retrieval core for the API process.
  *
  * The chat model is built lazily. Search and the dashboard must work without an
- * Anthropic key — only generating an answer needs one — so a missing key fails
+ * Anthropic key, only generating an answer needs one, so a missing key fails
  * that one request with a clear message instead of preventing the server from
  * starting.
  */

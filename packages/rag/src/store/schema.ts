@@ -7,7 +7,7 @@ export const EMBEDDING_DIMENSIONS = 384;
  * Corpus and index tables. Owned by `packages/rag`.
  *
  * On the FTS5 tokenizer: the default `unicode61` keeps `LumenSDK.init` as one
- * token, so a keyword search for `lumen` misses it — and this corpus is full of
+ * token, so a keyword search for `lumen` misses it, and this corpus is full of
  * identifiers (`lumen.track`, `first_interaction`, `cta_click`). Adding `.` and
  * `_` as token characters splits them, so the keyword half can match the parts a
  * person actually types. Measured against the eval in `docs/eval-results.md`.

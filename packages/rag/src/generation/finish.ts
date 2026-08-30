@@ -4,8 +4,8 @@ import { extractCitedIndexes, type NumberedSource } from './prompt.js';
 /**
  * Turns a finished response into an answer or a refusal.
  *
- * Shared by every `ChatModel` adapter on purpose. The rule it encodes — that a
- * response citing nothing is not grounded, whatever it says — is the project's
+ * Shared by every `ChatModel` adapter on purpose. The rule it encodes, that a
+ * response citing nothing is not grounded, whatever it says, is the project's
  * central safety property, and it must not be able to differ between providers.
  * If each adapter implemented its own, swapping the model could silently swap
  * the guarantee too.

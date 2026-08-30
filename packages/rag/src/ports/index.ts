@@ -3,7 +3,7 @@ import type { AnswerEvent, AnswerRequest, SearchHit, SearchRequest } from '@corp
 /**
  * The three things the retrieval core deliberately does not hard-code.
  *
- * Everything else in the system — routes, the MCP tool, the UI, the eval — talks
+ * Everything else in the system, routes, the MCP tool, the UI, the eval, talks
  * to these interfaces rather than to a vendor SDK. That is what makes "swap the
  * chat model" a configuration change instead of a refactor.
  */
@@ -23,7 +23,7 @@ export interface Embedder {
 }
 
 /**
- * Some embedding models are trained with an asymmetric query/document objective —
+ * Some embedding models are trained with an asymmetric query/document objective ,
  * `bge-*` wants a short instruction prefix on the query side only. Making that
  * explicit here stops it from being silently forgotten at one of the two call
  * sites, which would quietly degrade retrieval without failing anything.

@@ -9,7 +9,7 @@ export interface Chunk {
   /**
    * What actually gets embedded: the passage prefixed with its document title and
    * heading. The corpus is full of short sections whose subject lives only in the
-   * heading — "## Sign-off" means nothing on its own, but "Delivery Report: Merge
+   * heading. "## Sign-off" means nothing on its own, but "Delivery Report: Merge
    * Marina, 2025-05 > Sign-off" is retrievable. Storing both keeps citations
    * showing the real text while retrieval sees the context.
    */
@@ -28,7 +28,7 @@ export interface ChunkOptions {
  * Rough token estimate: ~4 characters per token for English prose.
  *
  * Deliberately not a real tokenizer. The only decisions it drives are "is this
- * section too big to embed in one piece" and a display count — both tolerant of
+ * section too big to embed in one piece" and a display count, both tolerant of
  * being 15% out, and neither worth a dependency that has to agree with the
  * model's own vocabulary.
  */

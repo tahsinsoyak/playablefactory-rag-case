@@ -36,7 +36,7 @@ interface IndexedRow {
  * Incremental by content hash: a document is re-embedded only when its text
  * changed, when it is new, or when the index was built by a different embedder.
  * Documents that vanished from disk are removed. This is what makes the pipeline
- * re-runnable — and what makes it a self-updating one, since re-running it is
+ * re-runnable, and what makes it a self-updating one, since re-running it is
  * the whole update mechanism.
  */
 export async function runIngestion(options: IngestOptions): Promise<IngestionRun> {

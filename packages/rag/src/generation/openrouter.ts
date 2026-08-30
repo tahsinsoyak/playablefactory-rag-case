@@ -20,7 +20,7 @@ export interface OpenRouterChatModelOptions {
  * OpenRouter adapter.
  *
  * OpenRouter exposes an OpenAI-compatible API, so this uses the OpenAI SDK with
- * the base URL redirected — that is OpenRouter's own documented approach, and it
+ * the base URL redirected. That is OpenRouter's own documented approach, and it
  * means SSE parsing, retries, and typed errors are handled by a maintained
  * client rather than by hand.
  *
@@ -115,9 +115,8 @@ export class OpenRouterChatModel implements ChatModel {
  * Turns an SDK error into something a user can act on.
  *
  * The generic "something went wrong" is worse than useless for the three
- * failures people actually hit here — a bad key, a model id that does not
- * exist, and an empty account — because each has an obvious fix that the
- * message should name.
+ * failures people actually hit here: a bad key, a model id that does not exist,
+ * and an empty account. Each has an obvious fix, and the message should name it.
  */
 function describeError(error: unknown, model: string): { code: string; message: string } {
   const status = (error as { status?: number }).status;
@@ -127,7 +126,7 @@ function describeError(error: unknown, model: string): { code: string; message: 
     return {
       code: 'unauthorized',
       message:
-        'OpenRouter rejected the API key. Check OPENROUTER_API_KEY in .env — keys start with "sk-or-".',
+        'OpenRouter rejected the API key. Check OPENROUTER_API_KEY in .env; keys start with "sk-or-".',
     };
   }
 
@@ -141,7 +140,7 @@ function describeError(error: unknown, model: string): { code: string; message: 
   if (status === 404) {
     return {
       code: 'upstream_unavailable',
-      message: `OpenRouter has no model "${model}". Set LLM_MODEL to a valid id — see https://openrouter.ai/models.`,
+      message: `OpenRouter has no model "${model}". Set LLM_MODEL to a valid id. See https://openrouter.ai/models.`,
     };
   }
 

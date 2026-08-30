@@ -13,7 +13,7 @@ const TD = 'px-4 py-2.5 text-[13px] text-ink';
 /**
  * Admin user management.
  *
- * The self-demotion guard lives on the API — the last admin removing their own
+ * The self-demotion guard lives on the API. The last admin removing their own
  * role would lock everyone out of the dashboard with no way back through the UI.
  * Here the control is simply disabled for your own row, so the rule is visible
  * before it is enforced rather than only surfacing as a rejected request.

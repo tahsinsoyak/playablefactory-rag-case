@@ -6,7 +6,7 @@ import { SignOutButton } from './SignOutButton';
 /**
  * The frame every signed-in page sits in.
  *
- * The dashboard link appears only for admins — but that is presentation, not
+ * The dashboard link appears only for admins, but that is presentation, not
  * protection. The page re-checks server-side and the API enforces the role on
  * every route, so hiding the link is a courtesy to regular users rather than the
  * thing standing between them and the data.

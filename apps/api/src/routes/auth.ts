@@ -24,7 +24,7 @@ import {
 /**
  * A hash of a throwaway password, computed once at startup. Used to spend the
  * same work verifying a login for an address that does not exist as for one that
- * does — otherwise response timing distinguishes real accounts from fake ones.
+ * does. Otherwise response timing distinguishes real accounts from fake ones.
  */
 let decoyHash: string | undefined;
 async function getDecoyHash(): Promise<string> {

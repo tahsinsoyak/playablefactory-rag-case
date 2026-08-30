@@ -19,7 +19,7 @@ declare module 'fastify' {
  *
  * The cookie serves the browser, where httpOnly is what keeps the token out of
  * reach of any script on the page. The bearer header serves the MCP server and
- * `curl`, which have no cookie jar. Both paths verify identically — the header
+ * `curl`, which have no cookie jar. Both paths verify identically, the header
  * is a transport convenience, not a second, weaker way in.
  */
 function extractToken(request: FastifyRequest): string | null {
@@ -46,7 +46,7 @@ export function createRequireAuth(accessSecret: string): preHandlerHookHandler {
 
 /**
  * Role check. Registered as a route-level preHandler *after* `requireAuth`, so
- * it can rely on `request.user` being set — but it re-checks rather than
+ * it can rely on `request.user` being set, but it re-checks rather than
  * assuming, because a route registered with the wrong hook order should fail
  * closed instead of granting access.
  */

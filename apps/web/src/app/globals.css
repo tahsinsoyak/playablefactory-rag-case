@@ -4,7 +4,7 @@
  * Design tokens.
  *
  * The accent is #E8730C, taken from the case document itself rather than
- * approximated by eye — it is the exact fill used for its headings.
+ * approximated by eye. It is the exact fill used for its headings.
  *
  * It appears as two tokens, not one, because a brand colour rarely works for
  * both jobs. As a *fill* with near-black ink on top it reaches 5.8:1, which
@@ -12,7 +12,7 @@
  * so `--color-accent-text` is a deepened version at 4.9:1; on dark it is
  * lightened instead, to 6.5:1. Every ratio here was computed, not guessed.
  *
- * Neutrals are warm to sit with the orange — a cool grey next to it reads as a
+ * Neutrals are warm to sit with the orange. A cool grey next to it reads as a
  * mistake rather than a decision.
  */
 @theme {

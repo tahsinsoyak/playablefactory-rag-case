@@ -155,17 +155,17 @@ async function main(): Promise<void> {
     for (const result of results) {
       const isProbe = result.expected.length === 0;
       const rank =
-        result.reciprocalRank === 0 ? '—' : String(Math.round(1 / result.reciprocalRank));
+        result.reciprocalRank === 0 ? 'n/a' : String(Math.round(1 / result.reciprocalRank));
       const verdict = isProbe
         ? result.aboveFloor
-          ? 'FAIL — would answer'
-          : 'pass — refuses'
+          ? 'FAIL, would answer'
+          : 'pass, refuses'
         : result.hit
           ? 'pass'
-          : 'FAIL — not retrieved';
+          : 'FAIL, not retrieved';
 
       lines.push(
-        `| ${result.question} | ${isProbe ? '_(nothing)_' : result.expected.join(', ')} | ${isProbe ? '—' : rank} | ${result.bestSimilarity.toFixed(4)} | ${verdict} |`,
+        `| ${result.question} | ${isProbe ? '_(nothing)_' : result.expected.join(', ')} | ${isProbe ? 'n/a' : rank} | ${result.bestSimilarity.toFixed(4)} | ${verdict} |`,
       );
     }
 
@@ -211,7 +211,7 @@ async function main(): Promise<void> {
         '',
         `_${expectedNote}_${testCase.note ? ` · ${testCase.note}` : ''}`,
         '',
-        `**${status}** — cites ${citations.length > 0 ? citations.join(', ') : 'nothing'}`,
+        `**${status}**. Cites ${citations.length > 0 ? citations.join(', ') : 'nothing'}`,
         '',
         `> ${text.replace(/\n/g, '\n> ')}`,
         '',

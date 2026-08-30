@@ -14,7 +14,7 @@ Example queries for testing your retrieval and answers. A good answer cites the 
 4. What caused the March 2026 AppLovin rejections and what was fixed?
    Expect: incident-postmortem-2026-03.md
 
-5. Which languages must every playable ship with, and what is the fallback?
-   Expect: localization-guide.md
+5, which languages must every playable ship with, and what is the fallback?
+Expect: localization-guide.md
 
 Also test at least one question the corpus cannot answer (for example a question about salaries or vacation policy). The correct behavior is an honest "the corpus does not cover this", with no invented citation.

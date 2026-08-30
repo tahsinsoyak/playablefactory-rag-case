@@ -1,20 +1,20 @@
 # AI Usage Log
 
 Kept as the work happens, not reconstructed afterwards. The case asks what AI did, what I
-wrote myself, where it got things wrong, and how I caught it — so the "got it wrong"
+wrote myself, where it got things wrong, and how I caught it, so the "got it wrong"
 entries are the point of this file, not an appendix to it.
 
 **Tool:** Claude Code (Claude Opus 5), used interactively from the terminal.
 
-**How I've been working with it:** I make the calls that shape the system — stack, storage,
-auth model, what is in and out of scope — and Claude does the reading, the scaffolding, and
+**How I've been working with it:** I make the calls that shape the system, stack, storage,
+auth model, what is in and out of scope, and Claude does the reading, the scaffolding, and
 the verification runs. Where it proposed a design decision I made it justify the choice
 before accepting it, and where I left a decision open it had to state a recommendation and
 a reason rather than ask again.
 
 ---
 
-## M0 — Foundation
+## M0: Foundation
 
 ### What AI did
 
@@ -32,7 +32,7 @@ a reason rather than ask again.
   Next.js app) and the auth model (own JWT + argon2id rather than a hosted provider),
   because security and architecture are separately graded and I want to be able to defend
   both line by line.
-- That the chat model must sit behind a swappable port — I may want to compare providers.
+- That the chat model must sit behind a swappable port. I may want to compare providers.
 - Vector store and embedder were left to Claude's recommendation, with reasons given:
   SQLite + `sqlite-vec` for zero-infra setup, local embeddings so the reviewer needs one
   API key instead of two.
@@ -43,12 +43,12 @@ a reason rather than ask again.
 with a plain JS number as the primary key and failed with
 `Only integers are allows for primary key values on vec_chunks`. better-sqlite3 binds JS
 numbers as doubles, and `vec0` rejects that. _Caught by:_ running the spike instead of
-assuming it worked — this was exactly why the spike existed. Fixed by binding `BigInt(id)`.
+assuming it worked. This was exactly why the spike existed. Fixed by binding `BigInt(id)`.
 Worth remembering, because the same mistake in the real ingestion path would fail only once
 the first vector is written.
 
 **2. TypeScript 7 broke the lint step.** Claude checked the registry, saw `typescript@7.0.2`
-as `latest`, and pinned it. `tsc --build` passed, so nothing looked wrong — but
+as `latest`, and pinned it. `tsc --build` passed, so nothing looked wrong, but
 `npx eslint .` then failed outright with `typescript-eslint does not support TS 7.0`.
 _Caught by:_ running lint and format in M0 rather than treating "typecheck passes" as done.
 Pinned to TypeScript 6.0.3, the newest version the whole toolchain agrees on. The general
@@ -59,7 +59,7 @@ verification run tells you which.
 reported the pipeline's exit code, so a clean run appeared as `typecheck exit=1`. It was
 `grep` reporting "no lines matched". _Caught by:_ the number not matching the (empty)
 output. Re-run capturing each exit code directly: `typecheck=0 lint=0 prettier=0`. Nothing
-was actually broken, but it briefly looked like it was — a reminder that a verification
+was actually broken, but it briefly looked like it was, a reminder that a verification
 step that can lie about its own result is worse than no verification step.
 
 ### Findings from the M0 spikes
@@ -85,7 +85,7 @@ Two things surfaced that neither of us predicted:
 
 ---
 
-## M1 — Auth spine
+## M1: Auth spine
 
 **What AI did:** wrote the schema and migrations, argon2id hashing, JWT issuing and
 verification, the refresh-token rotation logic, the route handlers, and the test suite.
@@ -97,17 +97,17 @@ them.
 
 **Where it went well, and worth calling out as a review of the AI rather than a rubber
 stamp:** several of the security properties here came from Claude proposing them and
-justifying the reason — the decoy hash so a login for a nonexistent address costs the same
+justifying the reason. The decoy hash so a login for a nonexistent address costs the same
 argon2 work as a real one, and revoking the whole token family on reuse of a rotated refresh
 token. I kept both because the reasoning held up, not because they sounded good. The one I
-pushed on was scoping the refresh cookie to `/auth`; the justification — a long-lived
-credential should not ride along on every request — is sound, so it stayed.
+pushed on was scoping the refresh cookie to `/auth`; the justification, a long-lived
+credential should not ride along on every request, is sound, so it stayed.
 
 **What I checked myself:** that the tests actually fail when the protection is removed, not
 just that they pass. A test asserting 403 is worthless if it would also pass with the guard
 deleted.
 
-## M2 — Ingestion
+## M2: Ingestion
 
 **What AI did:** corpus loader, metadata extraction, the heading-aware chunker, the local
 embedder, the SQLite store, the incremental ingestion pass, and 13 tests.
@@ -116,7 +116,7 @@ embedder, the SQLite store, the incremental ingestion pass, and 13 tests.
 
 **4. Deleting a document would have left orphaned vectors.** The first version of the store
 relied on `on delete cascade` to clean up. That works for `chunks` and `chunk_rowids`, but
-`vec_chunks` and `chunks_fts` are virtual tables with no foreign keys — nothing would have
+`vec_chunks` and `chunks_fts` are virtual tables with no foreign keys, nothing would have
 cascaded, and deleted documents would have kept surfacing in search results with their text
 already gone. _Caught by:_ writing a test that asserts all three counts return to zero after
 a removal, rather than only checking that the `chunks` table emptied. That test exists
@@ -124,24 +124,24 @@ precisely because the invariant is invisible from the outside.
 
 **5. A partial answer on the FTS5 tokenizer.** The M0 spike found that `LumenSDK` stays one
 token, and the fix landed in M2 as `tokenize = "unicode61 tokenchars '.-_'"`. What was not
-initially checked is whether it actually helped on the real corpus — that was verified
+initially checked is whether it actually helped on the real corpus, that was verified
 afterwards by running a keyword search for `lumen.track` against the live index and
 confirming it now matches the meeting notes that mention it. A config change that is never
 exercised is a guess wearing a comment.
 
-## M3 — Retrieval and grounded answers
+## M3: Retrieval and grounded answers
 
 **What AI did:** RRF fusion, the Anthropic adapter, the grounding prompt, the answer
 service, the API routes, and the eval harness.
 
-**Where it got things wrong — the most instructive one in this project:**
+**Where it got things wrong. The most instructive one in this project:**
 
 **6. The refusal gate thresholded a number that carries no relevance information.** The
 first implementation refused when the top fused RRF score fell below a floor, with a
 plausible-sounding comment deriving the constant from `1/(60 + rank)`. It was wrong in a way
 that reads as correct. RRF scores come from _ranks_, so something always ranks first: the
-eval showed "how much do senior developers get paid?" scoring 0.0328 — byte-identical to the
-best genuine question — and **all three out-of-corpus probes passed the gate**. A system
+eval showed "how much do senior developers get paid?" scoring 0.0328, byte-identical to the
+best genuine question, and **all three out-of-corpus probes passed the gate**. A system
 described as refusing honestly would in fact have answered every one of them.
 
 _Caught by:_ the eval harness, on its first run, because it scored the out-of-corpus probes
@@ -151,7 +151,7 @@ would have revealed it, and manual spot-checks of the five sample questions woul
 passed.
 
 _Fixed by:_ gating on cosine similarity, which is absolute, and measuring the two
-populations instead of guessing a constant — answerable questions land at 0.621–0.827,
+populations instead of guessing a constant. Answerable questions land at 0.621–0.827,
 out-of-corpus probes at 0.461–0.487, so the floor sits at 0.55 in the empty band between
 them. A test now asserts that separation still holds.
 
@@ -161,15 +161,15 @@ was quietly weaker, `/answer` now rejects it at the schema.
 
 **7. Two commits pushed with a failing check.** Twice I read the output of `npm run lint`,
 saw a failure, and pushed anyway because the shell chain continued past it. Both were
-trivial — an unused variable, a type error in a test — but the process failure is the point:
+trivial, an unused variable, a type error in a test, but the process failure is the point:
 the verification step was being _printed_ rather than _gated on_. Fixed by making the commit
 conditional on all three checks exiting zero. Recorded here because a reviewer reading the
 git history will see the two follow-up fix commits, and the honest explanation is process,
 not bad luck.
 
-## M4 — Web app
+## M4: Web app
 
-**What AI did:** the Next.js app — login, chat with SSE streaming and citation highlighting,
+**What AI did:** the Next.js app. Login, chat with SSE streaming and citation highlighting,
 the dashboard, and the server-side page guards.
 
 **Where it got things wrong:**
@@ -183,47 +183,47 @@ redirect is a known place for it. Fixed by accepting only paths starting with a 
 **9. A stale server misled a verification run.** While testing the search endpoint I got a
 404 and briefly went looking for a routing bug. The API process on port 4000 was one started
 an hour earlier, before those routes existed. _Caught by:_ checking the process rather than
-the code. The lesson is verification hygiene — a passing or failing test against the wrong
+the code. The lesson is verification hygiene. A passing or failing test against the wrong
 build tells you nothing either way.
 
 **Also worth stating plainly:** the UI has not been checked visually. The Chrome extension
 was not connected in this environment, so responsiveness and layout were verified by reading
-the markup and the Tailwind breakpoints, and through HTTP responses — not by eye. That is a
+the markup and the Tailwind breakpoints, and through HTTP responses, not by eye. That is a
 real gap in the verification, not a formality.
 
-## M5 — MCP server
+## M5: MCP server
 
 **What AI did:** the server, the tool definition, and two verification paths.
 
 **What I decided:** that "it compiles" is not evidence an MCP server works. It is verified
-twice — once with a real MCP `Client` over an in-memory transport pair, and once by driving
+twice. Once with a real MCP `Client` over an in-memory transport pair, and once by driving
 the shipped stdio entry point with raw line-delimited JSON-RPC, which is what an actual
 client does.
 
 **A good call by the AI:** opening the database read-only for the MCP process, so a client
-can search but structurally cannot modify the corpus — enforced by the connection rather
+can search but structurally cannot modify the corpus. Enforced by the connection rather
 than by which tools happen to be registered.
 
-## M6 — Documentation
+## M6: Documentation
 
 **Where it got things wrong:**
 
 **10. Every configured path resolved against the wrong directory.** The README documented
 `npm run seed` and `npm run ingest` from the repo root. Running them to check the
 documentation was accurate, both failed: npm sets a workspace script's cwd to that
-workspace, so `./corpus` resolved to `apps/api/corpus`. The MCP server had it worse — an
+workspace, so `./corpus` resolved to `apps/api/corpus`. The MCP server had it worse, an
 external client launches it with an arbitrary cwd, so it could not reliably find the index
 at all. _Caught by:_ running the README's own commands instead of assuming they worked
 because the underlying code did. Fixed by anchoring paths to the workspace root. Notably,
-that root-walking helper got written twice before being consolidated — duplication lint
+that root-walking helper got written twice before being consolidated, duplication lint
 cannot catch and a reader would have to spot.
 
-## Post-M6 — finishing passes
+## Post-M6: finishing passes
 
 **11. `npm run dev` never started the web app on Windows.** The root script was
 `npm run dev -w api & npm run dev -w web`. On Linux and macOS `&` backgrounds the first
 command; npm on Windows runs scripts through `cmd.exe`, where `&` is a _sequential_
-separator. So the API started, blocked forever, and the web server was never reached — and
+separator, so the API started, blocked forever, and the web server was never reached, and
 this was the README's headline "run both at once" instruction. _Caught by:_ actually running
 it, after the README claimed it worked. A one-line probe confirmed the shell semantics
 rather than assuming them.
@@ -240,7 +240,7 @@ are run with `node` directly, which also needs no new dependency.
 regular user gets 403 from `/admin/users`. Seven other admin routes had no such test, so the
 protection was really only verified where someone had remembered to look. Replaced with a
 table-driven suite covering every admin route for both anonymous and regular-user callers,
-plus a positive case proving an admin still gets through — otherwise a route broken for
+plus a positive case proving an admin still gets through, otherwise a route broken for
 everyone would pass as "correctly refused". That immediately found `/index/health` returning
 500 under test: it reads the corpus from disk, and the test config's relative `CORPUS_DIR`
 resolved against the workspace rather than the repo root. The same class of bug as
@@ -250,18 +250,18 @@ The test fixture was also duplicated verbatim across the two suites before being
 into `test-support.ts`. A fixture that drifts between suites is worse than none, because the
 suites quietly stop testing the same system.
 
-**13. A fresh clone could not run at all — the most important bug in the project.** With
+**13. A fresh clone could not run at all. The most important bug in the project.** With
 everything else finished and verified, I cloned the repository into a clean directory and
 followed the README literally. `npm run seed` failed immediately:
 `Cannot find module '@corpus/rag'`.
 
 The three apps import the shared packages by name, which resolve to each package's `dist/`.
 `dist/` is gitignored build output, so on a clean checkout it does not exist. My working
-copy had those directories from earlier builds — meaning **every command I had verified
+copy had those directories from earlier builds. Meaning **every command I had verified
 passed for a reason that would not exist on the reviewer's machine**. Nothing about the code
 was wrong; the environment I tested in was quietly different from the one described.
 
-_Caught by:_ cloning into a clean directory. There was no other way — testing in place
+_Caught by:_ cloning into a clean directory. There was no other way, testing in place
 cannot find this, because the thing that is missing is exactly the thing my directory
 already had. _Fixed by:_ a root `prepare` script, which npm runs automatically after
 install.
@@ -289,7 +289,7 @@ The whole thing was then re-run from a second clean clone, following only the RE
 **14. The chat page could never have worked in a browser.** Everything was verified with
 curl, which does not enforce CORS. `/answer` writes its response head with
 `reply.raw.writeHead` for the SSE stream, and that discards every header Fastify had
-staged - including the CORS headers set by the onRequest hook. So the streamed response
+staged - including the CORS headers set by the onRequest hook, so the streamed response
 went out with no `Access-Control-Allow-Origin`, the browser blocked it, and the chat page
 failed with a bare "Failed to fetch". Every other route was fine, because they return
 through Fastify normally; only the one route that bypasses it was broken.
@@ -316,8 +316,8 @@ appear at the top level, so rather than conditionally overriding, the dark block
 the light palette outright: the served stylesheet contained the dark values and not a single
 light one. Anyone on a light-themed OS would have seen a dark-only app.
 
-_Caught by:_ not trusting the build. `next build` passed, typecheck passed, nothing warned —
-so I fetched the stylesheet the dev server actually serves and grepped it for the light
+_Caught by:_ not trusting the build. `next build` passed, typecheck passed, nothing warned.
+So I fetched the stylesheet the dev server actually serves and grepped it for the light
 surface colour. Zero occurrences. _Fixed by:_ overriding the variables on `:root` under the
 media query instead of redeclaring `@theme`.
 
@@ -326,7 +326,7 @@ evidence that the output is right, and with no browser available the only way to
 inspect the artifact that actually gets served.
 
 **Brand colour.** The accent is `#E8730C`, extracted from the case PDF's own content stream
-rather than eyeballed from a screenshot — it is the exact fill used for its headings. It
+rather than eyeballed from a screenshot. It is the exact fill used for its headings. It
 ships as two tokens because one will not do both jobs: as a fill under near-black ink it
 reaches 5.8:1, but as text on a light surface it is 2.9:1 and fails AA, so the text token is
 a deepened `#B35708` at 4.9:1, lightened to `#F2853A` on dark. Every ratio was computed.
@@ -335,18 +335,18 @@ a deepened `#B35708` at 4.9:1, lightened to `#F2853A` on dark. Every ratio was c
 
 ## Overall
 
-**What AI was genuinely good at:** volume with consistency — thirty-odd files sharing one
+**What AI was genuinely good at:** volume with consistency, thirty-odd files sharing one
 error-handling style, one validation approach, one naming convention. Recalling security
 practices worth having (the decoy hash, refresh-token reuse detection, the
 `httpOnly`/`sameSite`/path combination). Writing tests that assert the _invariant_ rather
 than the current output, once pointed at what actually mattered.
 
 **Where it needed watching:** confident wrongness that reads as correct. The RRF threshold is
-the clearest case — a well-named constant, a comment deriving it from real arithmetic, and
+the clearest case. A well-named constant, a comment deriving it from real arithmetic, and
 completely wrong about what the number meant. Nothing in the code looked off.
 
 **The pattern across all ten corrections:** every one was caught by something that could
-return an unexpected answer — a spike, a test, an eval, a real HTTP request, running the
+return an unexpected answer. A spike, a test, an eval, a real HTTP request, running the
 documented command. None were caught by re-reading code. That shaped how the project was
 built: the native dependencies were proven in M0 before anything depended on them, and the
 eval existed before retrieval quality was claimed anywhere.

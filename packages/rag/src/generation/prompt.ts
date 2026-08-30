@@ -55,7 +55,7 @@ export function renderContext(sources: NumberedSource[]): string {
  * The rule that does the real work is the last one: an answer with no citation
  * is not a grounded answer, so the system treats an uncited response as a
  * refusal regardless of how confident it reads. That makes "don't make things
- * up" enforceable in code rather than a hopeful instruction — the model cannot
+ * up" enforceable in code rather than a hopeful instruction, the model cannot
  * produce a confident uncited claim that survives to the user.
  *
  * The corpus contains superseded documents (SDK v2 is deprecated by v3) and both
@@ -85,7 +85,7 @@ Question: ${question}`;
  * Extracts the source numbers a response actually cited.
  *
  * Handles `[1]`, `[1][2]`, and `[1, 2]`. Numbers outside the provided range are
- * dropped rather than trusted — a hallucinated citation must not become a link
+ * dropped rather than trusted. A hallucinated citation must not become a link
  * to some unrelated document.
  */
 export function extractCitedIndexes(text: string, maxIndex: number): number[] {

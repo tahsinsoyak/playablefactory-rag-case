@@ -15,7 +15,7 @@ export interface OpenDatabaseOptions {
  * Opens the database and loads the vector extension.
  *
  * The whole system shares one SQLite file: corpus tables, auth tables, and
- * analytics. That is deliberate — it means an ingestion run writes the document
+ * analytics. That is deliberate. It means an ingestion run writes the document
  * row, its chunks, the vector index, and the keyword index inside a single
  * transaction, so the four can never disagree about what is indexed.
  */

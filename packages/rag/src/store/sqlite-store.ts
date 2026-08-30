@@ -3,7 +3,7 @@ import type { Db } from './database.js';
 
 /**
  * The single implementation of `VectorStore`, backed by sqlite-vec for the
- * vector half and FTS5 for the keyword half — both in one SQLite file, so a
+ * vector half and FTS5 for the keyword half, both in one SQLite file, so a
  * document's chunks land in both indexes inside one transaction or in neither.
  *
  * A pgvector adapter would implement this same interface; nothing above this
@@ -84,7 +84,7 @@ export class SqliteVectorStore implements VectorStore {
    * Removes a document's chunks from all three tables.
    *
    * `chunks` cascades to `chunk_rowids`, but the two virtual tables have no
-   * foreign keys — nothing in SQLite will clean them up for us, and orphaned
+   * foreign keys. Nothing in SQLite will clean them up for us, and orphaned
    * vectors would keep being returned by search long after the text was gone.
    */
   #buildDelete(): (documentId: string) => void {
@@ -162,7 +162,7 @@ export class SqliteVectorStore implements VectorStore {
  * FTS5 treats `"`, `*`, `:`, `^`, `-`, and `(` as syntax, so raw user text is
  * both a crash risk and a source of surprising matches. Each surviving word is
  * quoted as a literal and joined with OR, because a question's words rarely all
- * appear in the passage that answers it — requiring all of them (the default)
+ * appear in the passage that answers it. Requiring all of them (the default)
  * would return almost nothing.
  */
 export function toFtsQuery(query: string): string | null {

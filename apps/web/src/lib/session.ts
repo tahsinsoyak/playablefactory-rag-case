@@ -8,7 +8,7 @@ import { API_URL } from './config';
  *
  * Done here rather than in the browser so a protected page never renders and
  * then disappears: an unauthenticated visitor is redirected before any markup is
- * sent. The API remains the actual authority — this is the same `/auth/session`
+ * sent. The API remains the actual authority. This is the same `/auth/session`
  * check, run early enough to be useful.
  */
 export async function getSession(): Promise<PublicUser | null> {
@@ -43,7 +43,7 @@ export async function requireUser(returnTo: string): Promise<PublicUser> {
  *
  * A regular user gets 404, not 403: telling them the dashboard exists but is
  * closed to them is information they have no use for. The API still answers 403
- * — that is a direct request from a client that already knows the endpoint.
+ *. That is a direct request from a client that already knows the endpoint.
  */
 export async function requireAdmin(returnTo: string): Promise<PublicUser> {
   const user = await requireUser(returnTo);

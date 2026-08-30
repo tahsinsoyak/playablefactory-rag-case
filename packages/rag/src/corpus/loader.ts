@@ -17,7 +17,7 @@ export interface LoadedDocument {
 /**
  * Directory name to document type. The corpus already sorts itself; we read its
  * convention rather than inventing metadata it does not have. Anything at the
- * top level is a `reference` — the SDK notes, network specs, and build docs.
+ * top level is a `reference`. The SDK notes, network specs, and build docs.
  */
 const DOC_TYPE_BY_DIRECTORY: Record<string, DocType> = {
   'client-briefs': 'client-brief',
@@ -41,7 +41,7 @@ export function classifyDocument(relativePath: string): DocType {
  * Meeting notes use `2026-06-15-production-sync.md`; delivery reports use
  * `2026-04-bubble-bakery.md` with no day; some references carry the date at the
  * end, like `incident-postmortem-2026-03.md`. A month-only date is normalised to
- * the first of that month so the column stays a real date and sorts correctly —
+ * the first of that month so the column stays a real date and sorts correctly ,
  * the day is not information we have, and inventing one is better than storing
  * three different shapes.
  */

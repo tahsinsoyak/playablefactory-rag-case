@@ -15,7 +15,7 @@ export type LoginRequest = z.infer<typeof loginRequestSchema>;
 
 /**
  * What the client is allowed to know about the signed-in user. Deliberately does
- * not carry the password hash or the refresh token — the access token lives in an
+ * not carry the password hash or the refresh token, the access token lives in an
  * httpOnly cookie the browser cannot read.
  */
 export const publicUserSchema = z.object({

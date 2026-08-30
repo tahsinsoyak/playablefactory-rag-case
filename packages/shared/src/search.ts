@@ -57,7 +57,7 @@ export const searchStatsSchema = z.object({
   answeredRate: z.number().min(0).max(1),
   medianLatencyMs: z.number().nonnegative(),
   topQueries: z.array(z.object({ query: z.string(), count: z.number().int().positive() })),
-  /** Queries that retrieved nothing above threshold — the corpus's blind spots. */
+  /** Queries that retrieved nothing above threshold, the corpus's blind spots. */
   recentUnanswered: z.array(z.object({ query: z.string(), createdAt: z.iso.datetime() })),
 });
 export type SearchStats = z.infer<typeof searchStatsSchema>;

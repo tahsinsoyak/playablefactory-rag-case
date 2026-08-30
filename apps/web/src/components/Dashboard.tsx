@@ -126,7 +126,7 @@ export function Dashboard({ currentUserId }: { currentUserId: string }) {
           <Stat
             label="Embedder"
             value={`${health?.dimensions ?? 0}d`}
-            hint={health?.embedderId ?? '—'}
+            hint={health?.embedderId ?? 'n/a'}
           />
         </div>
 
@@ -186,7 +186,7 @@ export function Dashboard({ currentUserId }: { currentUserId: string }) {
               Recent questions the corpus could not answer
             </p>
             <p className="mt-0.5 text-[12px] text-ink-muted">
-              These are the gaps — either the corpus is missing something, or retrieval is.
+              These are the gaps. Either the corpus is missing something, or retrieval is.
             </p>
             <ul className="mt-2.5 divide-y divide-border">
               {stats.recentUnanswered.map((entry, index) => (

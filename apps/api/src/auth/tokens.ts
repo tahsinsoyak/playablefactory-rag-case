@@ -64,7 +64,7 @@ export async function verifyAccessToken(
 
 /**
  * Refresh tokens are opaque random strings, not JWTs. They are checked against
- * the database on every use, so revocation is immediate — a stateless refresh
+ * the database on every use, so revocation is immediate, a stateless refresh
  * token cannot be withdrawn before it expires.
  */
 export function generateRefreshToken(): string {

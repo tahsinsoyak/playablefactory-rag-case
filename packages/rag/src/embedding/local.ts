@@ -4,8 +4,8 @@ import type { AsymmetricEmbedder } from '../ports/index.js';
 /**
  * bge-* models are trained asymmetrically: documents are embedded bare, but a
  * query is expected to carry this instruction. Omitting it costs several points
- * of retrieval quality and fails silently — nothing errors, results are just
- * quietly worse — which is why `AsymmetricEmbedder` makes it a type-level
+ * of retrieval quality and fails silently. Nothing errors, results are just
+ * quietly worse, which is why `AsymmetricEmbedder` makes it a type-level
  * obligation rather than a comment.
  */
 const QUERY_PREFIX = 'Represent this sentence for searching relevant passages: ';

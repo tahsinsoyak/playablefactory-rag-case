@@ -1,7 +1,7 @@
-# Corpus RAG — semantic search and grounded answers
+# Corpus RAG: semantic search and grounded answers
 
 A TypeScript monorepo that indexes an internal document corpus into a vector store and
-answers questions about it with grounded, cited answers — and says so plainly when the
+answers questions about it with grounded, cited answers, and says so plainly when the
 corpus does not cover the question.
 
 Built for the Playable Factory AI Software Engineer case study. `PROJECT.md` records the
@@ -18,12 +18,12 @@ including where it was wrong.
 
 Main features:
 
-- **Hybrid retrieval** — semantic (vector) and keyword (BM25) search fused with Reciprocal
+- **Hybrid retrieval**. Semantic (vector) and keyword (BM25) search fused with Reciprocal
   Rank Fusion. Measured: it puts the expected document first on every sample question,
   where each half alone sometimes does not.
 - **Grounded answers with citations** back to source documents, streamed token by token, in a
   conversation you can scroll back through. Citation markers are clickable and reveal the
-  exact passage they came from, with its similarity score and per-strategy ranks — retrieval
+  exact passage they came from, with its similarity score and per-strategy ranks. Retrieval
   is inspectable rather than a black box.
 - **Honest refusal.** When nothing relevant is retrieved, the system says so and cites
   nothing, rather than assembling something plausible from unrelated passages.
@@ -33,28 +33,28 @@ Main features:
   user administration are admin-only, enforced server-side.
 - **A retrieval eval** that scores hit@k and MRR across the sample questions and checks
   that out-of-corpus questions are refused.
-- **User management** — admins can list users and change roles, with a guard against
+- **User management**. Admins can list users and change roles, with a guard against
   demoting yourself out of the last admin account.
 
 ## Technology stack
 
-| Area           | Choice                                                                       |
-| -------------- | ---------------------------------------------------------------------------- |
-| Language       | TypeScript 6 throughout, strict, no `any` (lint-enforced)                    |
-| Monorepo       | npm workspaces + TypeScript project references                               |
-| Frontend       | Next.js 16 (App Router), React 19, Tailwind CSS 4                            |
-| Backend        | Fastify 5                                                                    |
-| Database       | SQLite via `better-sqlite3`                                                  |
-| Vector search  | `sqlite-vec` (`vec0` virtual table, 384 dimensions)                          |
-| Keyword search | SQLite FTS5 with BM25                                                        |
-| Embeddings     | `bge-small-en-v1.5` run locally via `@huggingface/transformers` — no API key |
-| Answers        | Any model via OpenRouter (default) or Anthropic directly, streaming          |
-| MCP            | `@modelcontextprotocol/sdk`, stdio transport                                 |
-| Auth           | Own JWT (`jose`) + argon2id (`@node-rs/argon2`), httpOnly cookies            |
-| Validation     | zod 4 — one schema set shared by API, web, and MCP                           |
-| Tests          | `node:test` via `tsx`                                                        |
+| Area           | Choice                                                                      |
+| -------------- | --------------------------------------------------------------------------- |
+| Language       | TypeScript 6 throughout, strict, no `any` (lint-enforced)                   |
+| Monorepo       | npm workspaces + TypeScript project references                              |
+| Frontend       | Next.js 16 (App Router), React 19, Tailwind CSS 4                           |
+| Backend        | Fastify 5                                                                   |
+| Database       | SQLite via `better-sqlite3`                                                 |
+| Vector search  | `sqlite-vec` (`vec0` virtual table, 384 dimensions)                         |
+| Keyword search | SQLite FTS5 with BM25                                                       |
+| Embeddings     | `bge-small-en-v1.5` run locally via `@huggingface/transformers`, no API key |
+| Answers        | Any model via OpenRouter (default) or Anthropic directly, streaming         |
+| MCP            | `@modelcontextprotocol/sdk`, stdio transport                                |
+| Auth           | Own JWT (`jose`) + argon2id (`@node-rs/argon2`), httpOnly cookies           |
+| Validation     | zod 4. One schema set shared by API, web, and MCP                           |
+| Tests          | `node:test` via `tsx`                                                       |
 
-No Docker, no external database, and only one API key — see the design notes below for why.
+No Docker, no external database, and only one API key. See the design notes below for why.
 
 ## Requirements
 
@@ -62,11 +62,11 @@ No Docker, no external database, and only one API key — see the design notes b
 - **npm 10+**
 - An **LLM API key**, needed only to generate answers. Ingestion, search, the dashboard,
   and the MCP server all work without one.
-  - **OpenRouter** (default) — one key reaches Anthropic, OpenAI, Google, and open-weight
+  - **OpenRouter** (default). One key reaches Anthropic, OpenAI, Google, and open-weight
     models. Get one at <https://openrouter.ai/keys>.
   - **Anthropic** directly, if you prefer.
 
-Nothing else. No Docker, no database server, no embedding provider — embeddings run
+Nothing else. No Docker, no database server, and no embedding provider: embeddings run
 locally.
 
 ## Installation
@@ -79,8 +79,8 @@ npm install
 
 `npm install` also compiles the shared workspace packages, via npm's `prepare`
 lifecycle. The API, web app, and MCP server all import `@corpus/shared` and
-`@corpus/rag` by package name, so those have to be built before anything can run —
-you should not need to think about it, but if you ever see
+`@corpus/rag` by package name, so those have to be built before anything can run.
+You should not need to think about it, but if you ever see
 `Cannot find module '@corpus/rag'`, `npm run build` is the fix.
 
 Then create your environment file:
@@ -91,10 +91,10 @@ cp .env.example .env
 
 Open `.env` and set two things:
 
-1. **`OPENROUTER_API_KEY`** — your key from <https://openrouter.ai/keys>; they start with
+1. **`OPENROUTER_API_KEY`**. Your key from <https://openrouter.ai/keys>; they start with
    `sk-or-`. Leave it empty to run everything except answer generation. To use Anthropic
    directly instead, set `LLM_PROVIDER=anthropic` and `ANTHROPIC_API_KEY`.
-2. **`JWT_ACCESS_SECRET` and `JWT_REFRESH_SECRET`** — these have no defaults on purpose; a
+2. **`JWT_ACCESS_SECRET` and `JWT_REFRESH_SECRET`**. These have no defaults on purpose; a
    fallback secret is a vulnerability that boots successfully. Generate them with:
 
    ```bash
@@ -108,7 +108,7 @@ Open `.env` and set two things:
 
 ```bash
 npm run seed      # creates the two demo users
-npm run ingest    # indexes corpus/ — 142 documents, about 30 seconds
+npm run ingest    # indexes corpus/ (142 documents, about 30 seconds)
 ```
 
 The first ingestion downloads the embedding model (~35 MB) and caches it in `.models/`.
@@ -116,13 +116,13 @@ After that everything runs offline, and a re-run with no changes finishes in wel
 second.
 
 > **If `npm install` warns about blocked install scripts:** npm 12 blocks lifecycle scripts
-> by default, so `onnxruntime-node`'s postinstall does not run. Everything still works —
-> this was verified, not assumed — because the packages ship prebuilt binaries. No action
+> by default, so `onnxruntime-node`'s postinstall does not run. Everything still works.
+> This was verified, not assumed, because the packages ship prebuilt binaries. No action
 > needed.
 
 ## Running the application
 
-Two servers. Either run both at once — output from each is prefixed, and Ctrl+C stops both:
+Two servers. Either run both at once. Output from each is prefixed, and Ctrl+C stops both:
 
 ```bash
 npm run dev
@@ -146,13 +146,13 @@ Open **http://localhost:3000** and sign in.
 
 The login page has **one-click buttons for both accounts**, so you never have to type them.
 They are driven by `GET /auth/demo-accounts`, which returns an empty list when
-`NODE_ENV=production` — the gate is server-side rather than a flag in the client, because a
+`NODE_ENV=production`. The gate is server-side rather than a flag in the client, because a
 client-side flag still ships the credentials inside the JavaScript bundle where anyone can
 read them, whether the buttons render or not. Verified: a production build of the web app
 contains neither address nor password. The endpoint reads the same `SEED_*` variables the
 seed script does, so the buttons cannot drift from the accounts that actually exist.
 
-Sign in as the regular user first and try to reach `/dashboard` — you will get a 404, and
+Sign in as the regular user first and try to reach `/dashboard`. You will get a 404, and
 the API answers 403 to a direct call. Change the passwords via `SEED_*` in `.env` and re-run
 `npm run seed`.
 
@@ -162,7 +162,7 @@ the API answers 403 to a direct call. Change the passwords via `SEED_*` in `.env
 | --------------------------------------- | ------------------------------------------------------------------ |
 | `npm run ingest`                        | Index the corpus; incremental after the first run                  |
 | `npm run ingest -- --force`             | Re-embed everything (needed after a chunking change)               |
-| `npm run eval`                          | Score retrieval, write `docs/eval-results.md` — no API key needed  |
+| `npm run eval`                          | Score retrieval, write `docs/eval-results.md`, no API key needed   |
 | `npm run eval -- --answers`             | Also generate answers for each case (calls the model, costs money) |
 | `npm test`                              | Run the test suites (56 tests)                                     |
 | `npm run typecheck` / `lint` / `format` | The three checks every commit must pass                            |
@@ -215,7 +215,7 @@ curl -b jar.txt -N -X POST http://localhost:4000/answer \
 The stream emits `retrieval` (the passages, first, so a UI can render them immediately),
 then `delta` events as text arrives, then one `done` carrying either
 `{ status: "answered", citations: [...] }` or `{ status: "refused", reason }`. `/answer`
-accepts only `hybrid` and `vector` — see the design notes.
+accepts only `hybrid` and `vector`, see the design notes.
 
 ### Admin only
 
@@ -256,8 +256,8 @@ Build it with `npm run build --workspace=@corpus/mcp`, or point `command` at
 `npx tsx <repo>/apps/mcp/src/index.ts` to skip the build step.
 
 It exposes one tool, **`search_corpus`**, taking `query`, `limit`, `mode`, and an optional
-`docType`. It returns readable passages with their source paths — a model needs to cite
-them — plus `structuredContent` for programmatic clients. The index is opened **read-only**:
+`docType`. It returns readable passages with their source paths, a model needs to cite
+them. Plus `structuredContent` for programmatic clients. The index is opened **read-only**:
 an MCP client can search the corpus and can never modify it.
 
 Verify it without a client:
@@ -283,13 +283,13 @@ LLM_MODEL=deepseek/deepseek-chat     # open weights
 time the model is called it has been handed a handful of short, already-relevant passages
 and asked to quote them with citations. That is extraction, not reasoning. Measured on the
 case's own questions, `qwen3.7-flash` answers all five correctly with the right citations
-and refuses all three out-of-corpus probes — the same result as a frontier model, at a
+and refuses all three out-of-corpus probes. The same result as a frontier model, at a
 fraction of a cent. Spending more per token would buy eloquence, not accuracy, and the
 grading criteria say retrieval quality matters more than answer eloquence.
 
-Browse the full list at <https://openrouter.ai/models>. Because retrieval is unchanged by
+Browse the full list at <https://openrouter.ai/models>, because retrieval is unchanged by
 the choice, `npm run eval -- --answers` gives a like-for-like comparison across models on
-the same passages — which is the point of putting the provider behind a port rather than
+the same passages, which is the point of putting the provider behind a port rather than
 calling an SDK from the route handler.
 
 Switching the _embedder_ is a different matter: it changes the vector space and invalidates
@@ -301,29 +301,29 @@ nothing.
 **Why SQLite + sqlite-vec, not pgvector.** The corpus is 142 files and 114 KB. A
 server-class vector database would be infrastructure with nothing to manage, and it would
 add a setup step to every fresh machine. SQLite is a single file with no daemon, so
-`npm install` really is enough — and FTS5 lives in the same database, which makes hybrid
+`npm install` really is enough, and FTS5 lives in the same database, which makes hybrid
 search nearly free and lets a document's text, vectors, and keyword index be written in one
 transaction. `packages/rag` defines a `VectorStore` interface; pgvector would be an adapter,
 not a rewrite.
 
 **Why local embeddings.** `bge-small-en-v1.5` costs nothing, needs no key, runs offline, and
 embeds this corpus in seconds. It keeps the reviewer's required setup to a single LLM key
-rather than two accounts. Changing embedders invalidates the index — the vector space
-and width both change — so `documents.embedder_id` is recorded and ingestion rebuilds
+rather than two accounts. Changing embedders invalidates the index, the vector space
+and width both change, so `documents.embedder_id` is recorded and ingestion rebuilds
 automatically when it differs.
 
 **Chunking.** Markdown sections, split on headings, never crossing a document boundary, and
 merged toward ~400 tokens. Most documents here are 400–1000 bytes and become one or two
 chunks, which is correct: splitting a 600-byte postmortem would fracture its citations
-without improving recall. Each chunk stores two texts — the passage verbatim for display,
+without improving recall. Each chunk stores two texts. The passage verbatim for display,
 and a copy prefixed with `Document title > Heading` for embedding. The corpus is full of
 sections like `## Sign-off` whose subject exists only in the heading; unretrievable alone,
 retrievable with its title attached.
 
 **Why RRF, and why it is not the relevance threshold.** Cosine distance and BM25 are on
 incomparable scales, so fusing _ranks_ avoids inventing a normalisation constant to tune.
-But a rank-derived score says where a chunk placed, never whether it is any good —
-something always ranks first. An early version of the refusal gate thresholded the fused
+But a rank-derived score says where a chunk placed, never whether it is any good.
+Something always ranks first. An early version of the refusal gate thresholded the fused
 score, and every out-of-corpus probe sailed through it: "how much do senior developers get
 paid?" scored identically to the best genuine question. The gate now reads cosine
 similarity, which is absolute. The floor of **0.55** is measured, not chosen: answerable
@@ -336,7 +336,7 @@ quietly lose the grounding guarantee. Better to exclude the mode than to ship a 
 promise under the same name.
 
 **Refusal is structural, not linguistic.** Two independent guards. Before generating,
-anything below the similarity floor is refused without a model call — cheaper, and the
+anything below the similarity floor is refused without a model call, cheaper, and the
 model never gets the chance to construct something plausible from unrelated passages. After
 generating, a response that cites nothing is reported as a refusal however confident it
 reads, because an uncited answer is by definition not grounded. Citation numbers outside the
@@ -346,7 +346,7 @@ supplied range are discarded rather than turned into links.
 `v3`, and both match a question about SDK initialization. We deliberately retrieve both:
 the documents state their own status, and the prompt asks the model to prefer the current
 one and say what changed. Silently dropping v2 would produce a confident answer with no way
-to explain that `lumen.track` now fails silently — which is usually the actual question.
+to explain that `lumen.track` now fails silently, which is usually the actual question.
 
 **The FTS5 tokenizer is customised.** The default `unicode61` keeps `LumenSDK.init` as a
 single token, so a keyword search for `lumen` could not match it. In a corpus this full of
@@ -355,15 +355,15 @@ the index declares `tokenize = "unicode61 tokenchars '.-_'"`.
 
 **Security.** Login answers identically for an unknown address and a wrong password, and
 spends the same argon2 work on both by verifying against a decoy hash, so timing does not
-enumerate accounts. Refresh tokens are opaque random strings stored as SHA-256 hashes — a
-database read yields no working sessions — and they rotate on use; replaying a rotated
+enumerate accounts. Refresh tokens are opaque random strings stored as SHA-256 hashes, a
+database read yields no working sessions, and they rotate on use; replaying a rotated
 token is treated as a leak and revokes every session for that user. The access cookie is
 httpOnly; the refresh cookie is additionally scoped to `/auth` so the long-lived credential
 is not attached to ordinary requests. Role checks run server-side on every route, and page
 guards run before any markup is generated. Hiding a nav link is a courtesy, not a control.
 
 **Why OpenRouter is the default.** Answer generation is the only part that needs a hosted
-model, and one OpenRouter key reaches every provider — so a reviewer needs one account, and
+model, and one OpenRouter key reaches every provider, so a reviewer needs one account, and
 comparing models is an `.env` edit rather than a new adapter. The Anthropic adapter is kept
 for calling that API directly. Both use the same prompt and the same cited-or-refused
 decision, which live in shared modules precisely so that changing provider cannot quietly
@@ -394,7 +394,7 @@ apps/
   web/        Next.js: login, chat, dashboard
   mcp/        MCP server over the same retriever
 packages/
-  shared/     zod schemas and inferred types — the contract all three share
+  shared/     zod schemas and inferred types, the contract all three share
   rag/        the retrieval core: load, chunk, embed, store, retrieve, answer
 corpus/       the document corpus (142 markdown files)
 docs/         sample questions and eval results
@@ -402,21 +402,21 @@ docs/         sample questions and eval results
 
 ## Deployment
 
-Not deployed — the case treats that as optional, and the effort went into retrieval quality
+Not deployed. The case treats that as optional, and the effort went into retrieval quality
 instead. How it would be done:
 
 The **web app** is a standard Next.js build and would go to Vercel or any Node host. The
 **API** is a single Node process; the constraint is that SQLite needs a persistent
 filesystem, so it wants a host with a real disk or attached volume (Fly.io, Railway, a small
-VM) rather than a serverless runtime with an ephemeral one. Set `NODE_ENV=production` — that
-turns on `secure` cookies and proxy trust — point `WEB_ORIGIN` at the deployed frontend, and
+VM) rather than a serverless runtime with an ephemeral one. Set `NODE_ENV=production`, that
+turns on `secure` cookies and proxy trust. Point `WEB_ORIGIN` at the deployed frontend, and
 supply the JWT secrets and API key from the platform's secret store, never from a committed
 file.
 
 Ingestion would run as a release step (`npm run seed && npm run ingest`) so the container
 starts with a warm index, with the model cache baked into the image to avoid downloading it
 on boot. If the corpus changed independently of deploys, the incremental pipeline is already
-the right shape for a periodic job — it only re-embeds the difference.
+the right shape for a periodic job. It only re-embeds the difference.
 
 At a corpus size where one process and one file stopped being enough, the `VectorStore`
 interface is the seam: swap the SQLite adapter for pgvector, and the API becomes
@@ -430,8 +430,8 @@ Stated plainly rather than half-built:
   process, so there is no network surface to protect in this configuration. Exposing the
   server over HTTP would need real authentication: an OIDC-protected HTTP transport
   validating a bearer JWT against the provider's JWKS, mapping the verified subject to a
-  user, and reusing the same role checks the API already applies. That is the honest gap —
-  the groundwork is there, the OIDC flow is not.
+  user, and reusing the same role checks the API already applies. That is the honest gap.
+  The groundwork is there, the OIDC flow is not.
 - **A live deployment.** See above for how.
 - **Answer-quality scoring.** The eval measures retrieval quantitatively; answer quality is
   checked by reading the output of `npm run eval -- --answers`, not scored.

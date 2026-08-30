@@ -21,7 +21,7 @@ out/
 data/
 .models/
 
-# case material — provided to us, not ours to redistribute
+# case material: provided to us, not ours to redistribute
 PlayableFactory_AI_SE_Case_RAG.pdf
 sampledataset.zip
 

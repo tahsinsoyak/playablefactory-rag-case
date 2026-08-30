@@ -107,11 +107,11 @@ function SourceList({ turn }: { turn: Turn }) {
             </p>
 
             <p className="mt-2 font-mono text-[11px] text-ink-subtle">
-              cos {hit.vectorScore === null ? '—' : hit.vectorScore.toFixed(3)}
+              cos {hit.vectorScore === null ? 'n/a' : hit.vectorScore.toFixed(3)}
               {' · vector '}
-              {hit.vectorRank ?? '—'}
+              {hit.vectorRank ?? 'n/a'}
               {' · keyword '}
-              {hit.keywordRank ?? '—'}
+              {hit.keywordRank ?? 'n/a'}
             </p>
           </li>
         );

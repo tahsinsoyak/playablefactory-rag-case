@@ -11,7 +11,7 @@ const RRF_K = 60;
 
 /**
  * How many candidates each strategy contributes before fusion. Over-fetching
- * matters because the two halves disagree by design — a chunk ranked 15th by
+ * matters because the two halves disagree by design, a chunk ranked 15th by
  * vector and 3rd by keyword should still be able to win, and it cannot if we
  * only ever look at each list's top few.
  */
@@ -63,7 +63,7 @@ export class HybridRetriever implements Retriever {
 
     // Reciprocal Rank Fusion: sum 1/(k + rank) across the strategies that found
     // each chunk. Chosen over a weighted score blend because cosine distance and
-    // BM25 are on incomparable scales — fusing ranks needs no normalisation
+    // BM25 are on incomparable scales. Fusing ranks needs no normalisation
     // constant to tune, and nothing to re-tune when the corpus changes.
     const fused = new Map<string, number>();
     for (const [chunkId, rank] of vectorRanks) {
