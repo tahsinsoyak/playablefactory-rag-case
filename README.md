@@ -144,9 +144,17 @@ Open **http://localhost:3000** and sign in.
 | **User**  | `user@demo.local`  | `demo-user-pw`  | chat, search                                 |
 | **Admin** | `admin@demo.local` | `demo-admin-pw` | everything, plus the dashboard and ingestion |
 
+The login page has **one-click buttons for both accounts**, so you never have to type them.
+They are driven by `GET /auth/demo-accounts`, which returns an empty list when
+`NODE_ENV=production` — the gate is server-side rather than a flag in the client, because a
+client-side flag still ships the credentials inside the JavaScript bundle where anyone can
+read them, whether the buttons render or not. Verified: a production build of the web app
+contains neither address nor password. The endpoint reads the same `SEED_*` variables the
+seed script does, so the buttons cannot drift from the accounts that actually exist.
+
 Sign in as the regular user first and try to reach `/dashboard` — you will get a 404, and
-the API answers 403 to a direct call. Change the passwords via `SEED_*` in `.env` and
-re-run `npm run seed`.
+the API answers 403 to a direct call. Change the passwords via `SEED_*` in `.env` and re-run
+`npm run seed`.
 
 ## Other commands
 

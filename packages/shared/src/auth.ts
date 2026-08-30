@@ -43,3 +43,24 @@ export const accessTokenClaimsSchema = z.object({
   role: roleSchema,
 });
 export type AccessTokenClaims = z.infer<typeof accessTokenClaimsSchema>;
+
+/**
+ * Seeded demo accounts, offered by the API for one-click sign-in.
+ *
+ * Served by the server rather than compiled into the web bundle, so a
+ * production build ships no credentials at all - and so the values cannot drift
+ * from what `npm run seed` actually created, because both read the same
+ * environment.
+ */
+export const demoAccountSchema = z.object({
+  role: roleSchema,
+  email: z.email(),
+  password: z.string(),
+  description: z.string(),
+});
+export type DemoAccount = z.infer<typeof demoAccountSchema>;
+
+export const demoAccountsResponseSchema = z.object({
+  accounts: z.array(demoAccountSchema),
+});
+export type DemoAccountsResponse = z.infer<typeof demoAccountsResponseSchema>;

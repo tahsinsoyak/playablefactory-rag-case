@@ -3,7 +3,16 @@ import assert from 'node:assert/strict';
 import type { FastifyInstance } from 'fastify';
 import type { InjectPayload } from 'light-my-request';
 import { ACCESS_COOKIE } from '../auth/middleware.js';
-import { TEST_ADMIN, TEST_USER, buildTestApp, loginCookie, type TestApp } from '../test-support.js';
+import { buildServer } from '../server.js';
+import { createUser } from '../auth/users.js';
+import {
+  TEST_ADMIN,
+  TEST_CONFIG,
+  TEST_USER,
+  buildTestApp,
+  loginCookie,
+  type TestApp,
+} from '../test-support.js';
 
 /**
  * Every route that must not be reachable by a regular user.
@@ -225,5 +234,65 @@ describe('CORS', () => {
     });
 
     assert.equal(response.headers['access-control-allow-origin'], undefined);
+  });
+});
+
+describe('demo accounts', () => {
+  it('offers the seeded accounts outside production', async () => {
+    const response = await app.inject({ method: 'GET', url: '/auth/demo-accounts' });
+
+    assert.equal(response.statusCode, 200);
+    const { accounts } = response.json() as {
+      accounts: { role: string; email: string; password: string }[];
+    };
+
+    assert.equal(accounts.length, 2);
+    assert.deepEqual(accounts.map((a) => a.role).sort(), ['admin', 'user']);
+  });
+
+  it('serves nothing in production', async () => {
+    // The gate is server-side on purpose: a client-side flag still ships the
+    // credentials inside the JavaScript bundle, readable whether the buttons
+    // render or not. Here a production build has nothing to send.
+    const production = await buildServer({
+      db: harness.db,
+      config: { ...TEST_CONFIG, NODE_ENV: 'production' },
+    });
+
+    try {
+      const response = await production.inject({ method: 'GET', url: '/auth/demo-accounts' });
+      assert.equal(response.statusCode, 200);
+      assert.deepEqual(response.json().accounts, []);
+    } finally {
+      await production.close();
+    }
+  });
+
+  it('reports credentials the login endpoint accepts', async () => {
+    const { accounts } = (
+      await app.inject({ method: 'GET', url: '/auth/demo-accounts' })
+    ).json() as { accounts: { role: 'user' | 'admin'; email: string; password: string }[] };
+
+    // The fixture seeds its own users, so these accounts do not exist yet -
+    // create them exactly as `npm run seed` would, then sign in. That is the
+    // property worth holding: whatever the endpoint hands the buttons must be
+    // something /auth/login will accept. A password below the schema's minimum
+    // length, say, would render a button that always fails.
+    for (const account of accounts) {
+      await createUser(harness.db, {
+        email: account.email,
+        password: account.password,
+        role: account.role,
+      });
+
+      const login = await app.inject({
+        method: 'POST',
+        url: '/auth/login',
+        payload: { email: account.email, password: account.password },
+      });
+
+      assert.equal(login.statusCode, 200, `${account.email} should be able to sign in`);
+      assert.equal(login.json().user.role, account.role);
+    }
   });
 });

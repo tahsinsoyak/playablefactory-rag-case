@@ -1,5 +1,10 @@
 import type { FastifyInstance } from 'fastify';
-import { loginRequestSchema, type LoginResponse, type SessionResponse } from '@corpus/shared';
+import {
+  loginRequestSchema,
+  type DemoAccountsResponse,
+  type LoginResponse,
+  type SessionResponse,
+} from '@corpus/shared';
 import type { AppContext } from '../context.js';
 import { badRequest, unauthorized } from '../errors.js';
 import { ACCESS_COOKIE, REFRESH_COOKIE } from '../auth/middleware.js';
@@ -162,6 +167,43 @@ export async function registerAuthRoutes(app: FastifyInstance, ctx: AppContext):
 
     const claims = await verifyAccessToken(token, config.JWT_ACCESS_SECRET);
     const body: SessionResponse = { user: claims ? findUserById(db, claims.sub) : null };
+    return body;
+  });
+
+  /**
+   * The seeded demo accounts, for the login page's one-click buttons.
+   *
+   * Returns an empty list in production, unconditionally. Gating this on the
+   * server rather than in the client is the point: a client-side flag still
+   * ships the credentials inside the JavaScript bundle, where anyone can read
+   * them whether the buttons render or not. Here a production build sends
+   * nothing, because there is nothing to send.
+   *
+   * The values come from the same environment the seed script reads, so the
+   * buttons cannot drift from the accounts that actually exist.
+   */
+  app.get('/auth/demo-accounts', async () => {
+    if (config.NODE_ENV === 'production') {
+      const empty: DemoAccountsResponse = { accounts: [] };
+      return empty;
+    }
+
+    const body: DemoAccountsResponse = {
+      accounts: [
+        {
+          role: 'user',
+          email: process.env['SEED_USER_EMAIL'] ?? 'user@demo.local',
+          password: process.env['SEED_USER_PASSWORD'] ?? 'demo-user-pw',
+          description: 'Chat and search only',
+        },
+        {
+          role: 'admin',
+          email: process.env['SEED_ADMIN_EMAIL'] ?? 'admin@demo.local',
+          password: process.env['SEED_ADMIN_PASSWORD'] ?? 'demo-admin-pw',
+          description: 'Adds the dashboard and ingestion',
+        },
+      ],
+    };
     return body;
   });
 }
