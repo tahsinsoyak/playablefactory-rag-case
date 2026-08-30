@@ -16,13 +16,13 @@ import {
   GroundedAnswerService,
   HybridRetriever,
   SqliteVectorStore,
-  createChatModel,
   createEmbedder,
   MIN_RELEVANCE_SCORE,
 } from '@corpus/rag';
 import type { RetrievalMode } from '@corpus/shared';
 import { loadConfig, REPO_ROOT } from '../config.js';
 import { initDatabase } from '../db/index.js';
+import { chatModelFromConfig } from '../rag.js';
 
 interface EvalCase {
   question: string;
@@ -177,11 +177,7 @@ async function main(): Promise<void> {
 
   if (withAnswers) {
     lines.push('## Generated answers (hybrid)', '');
-    const chatModel = createChatModel({
-      provider: config.LLM_PROVIDER,
-      model: config.LLM_MODEL,
-      apiKey: config.ANTHROPIC_API_KEY,
-    });
+    const chatModel = chatModelFromConfig(config);
     const answerService = new GroundedAnswerService({ retriever, chatModel });
 
     for (const testCase of CASES) {

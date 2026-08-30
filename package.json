@@ -20,9 +20,9 @@
     "test": "npm run test --workspaces --if-present",
     "build": "tsc --build && npm run build --workspace=@corpus/web",
     "dev": "node scripts/dev.mjs",
-    "seed": "npm run seed --workspace=@corpus/api",
-    "ingest": "npm run ingest --workspace=@corpus/api",
-    "eval": "npm run eval --workspace=@corpus/api",
+    "seed": "tsx apps/api/src/scripts/seed.ts",
+    "ingest": "tsx apps/api/src/scripts/ingest.ts",
+    "eval": "tsx apps/api/src/scripts/eval.ts",
     "prepare": "tsc --build"
   },
   "devDependencies": {

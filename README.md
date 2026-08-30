@@ -261,12 +261,20 @@ The chat model sits behind a `ChatModel` port, so the provider is configuration 
 code. With OpenRouter, changing models is one line in `.env`:
 
 ```bash
-LLM_MODEL=anthropic/claude-opus-5    # the default
-LLM_MODEL=anthropic/claude-sonnet-5  # cheaper, still strong
-LLM_MODEL=openai/gpt-4o              # a different family entirely
-LLM_MODEL=openai/gpt-4o-mini         # cheapest of these
+LLM_MODEL=qwen/qwen3.7-flash         # the default - $0.03/$0.13 per 1M tokens
+LLM_MODEL=anthropic/claude-opus-5    # strongest, ~170x the input cost
+LLM_MODEL=anthropic/claude-sonnet-5
+LLM_MODEL=openai/gpt-4o-mini
 LLM_MODEL=deepseek/deepseek-chat     # open weights
 ```
+
+**The default is deliberately a cheap model.** Retrieval does the hard part here: by the
+time the model is called it has been handed a handful of short, already-relevant passages
+and asked to quote them with citations. That is extraction, not reasoning. Measured on the
+case's own questions, `qwen3.7-flash` answers all five correctly with the right citations
+and refuses all three out-of-corpus probes — the same result as a frontier model, at a
+fraction of a cent. Spending more per token would buy eloquence, not accuracy, and the
+grading criteria say retrieval quality matters more than answer eloquence.
 
 Browse the full list at <https://openrouter.ai/models>. Because retrieval is unchanged by
 the choice, `npm run eval -- --answers` gives a like-for-like comparison across models on

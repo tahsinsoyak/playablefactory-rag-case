@@ -13,6 +13,24 @@ import {
 import type { Config } from './config.js';
 import type { Db } from './db/index.js';
 
+/**
+ * Builds the chat model from configuration.
+ *
+ * The one place that maps config to a provider. It previously happened here and
+ * again in the eval script, and when OpenRouter was added only one of the two
+ * was updated - so `npm run eval -- --answers` reported a missing key that was
+ * in fact set. Two call sites, one of them silently wrong.
+ */
+export function chatModelFromConfig(config: Config) {
+  return createChatModel({
+    provider: config.LLM_PROVIDER,
+    model: config.LLM_MODEL,
+    apiKey: config.ANTHROPIC_API_KEY,
+    openRouterApiKey: config.OPENROUTER_API_KEY,
+    appUrl: config.WEB_ORIGIN,
+  });
+}
+
 export interface RagContext {
   embedder: Embedder;
   store: VectorStore;
@@ -38,13 +56,7 @@ export function createRagContext(db: Db, config: Config): RagContext {
       let chatModel;
 
       try {
-        chatModel = createChatModel({
-          provider: config.LLM_PROVIDER,
-          model: config.LLM_MODEL,
-          apiKey: config.ANTHROPIC_API_KEY,
-          openRouterApiKey: config.OPENROUTER_API_KEY,
-          appUrl: config.WEB_ORIGIN,
-        });
+        chatModel = chatModelFromConfig(config);
       } catch (error) {
         // A misconfiguration used to escape as a thrown error after the SSE
         // headers were already sent, which the route could only report as
