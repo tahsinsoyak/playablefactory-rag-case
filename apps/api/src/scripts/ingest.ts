@@ -9,6 +9,8 @@ import { initDatabase } from '../db/index.js';
 async function main(): Promise<void> {
   const config = loadConfig();
   const force = process.argv.includes('--force');
+  // `--quiet` prints only the summary, for the setup script.
+  const quiet = process.argv.includes('--quiet');
   const { db } = initDatabase(config.DATABASE_PATH);
 
   const embedder = createEmbedder(config.EMBEDDER, {
@@ -31,7 +33,7 @@ async function main(): Promise<void> {
       if (event.type === 'failed') console.error(`  FAILED  ${event.path}: ${event.error}`);
       // Unchanged documents are the common case on a re-run; printing 142 of
       // them would bury the handful of lines that actually matter.
-      if (event.type === 'document' && event.action !== 'unchanged') {
+      if (!quiet && event.type === 'document' && event.action !== 'unchanged') {
         console.log(`  ${event.action.padEnd(9)} ${event.path}`);
       }
     },

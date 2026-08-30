@@ -8,7 +8,7 @@ describe('chat model selection', () => {
     const model = createChatModel({
       provider: 'openrouter',
       model: 'openai/gpt-5-mini',
-      openRouterApiKey: 'sk-or-test',
+      openRouterApiKey: 'sk-or-v1-0123456789abcdef0123456789abcdef',
     });
 
     assert.ok(model instanceof OpenRouterChatModel);
@@ -31,7 +31,7 @@ describe('chat model selection', () => {
         createChatModel({
           provider: 'llamafile',
           model: 'whatever',
-          openRouterApiKey: 'sk-or-test',
+          openRouterApiKey: 'sk-or-v1-0123456789abcdef0123456789abcdef',
         }),
       (error: unknown) =>
         error instanceof ChatModelConfigurationError && /openrouter/.test(error.message),
@@ -42,17 +42,24 @@ describe('chat model selection', () => {
     // A configuration error is shown to the user, so it must name variables and
     // never their values.
     try {
-      createChatModel({ provider: 'nope', model: 'm', openRouterApiKey: 'sk-or-secret-value' });
+      createChatModel({
+        provider: 'nope',
+        model: 'm',
+        openRouterApiKey: 'sk-or-v1-secret-value-0123456789abcdef',
+      });
       assert.fail('expected a configuration error');
     } catch (error) {
       assert.ok(error instanceof ChatModelConfigurationError);
-      assert.ok(!error.message.includes('sk-or-secret-value'), 'error message leaked a key');
+      assert.ok(
+        !error.message.includes('sk-or-v1-secret-value-0123456789abcdef'),
+        'error message leaked a key',
+      );
     }
   });
 
   it('defaults to the cheap worker model when none is given', () => {
     // An unset LLM_MODEL must not quietly cost a hundred times more per query.
-    const model = new OpenRouterChatModel({ apiKey: 'sk-or-test' });
+    const model = new OpenRouterChatModel({ apiKey: 'sk-or-v1-0123456789abcdef0123456789abcdef' });
     assert.equal(model.id, 'qwen/qwen3.7-flash');
   });
 });

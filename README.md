@@ -8,6 +8,70 @@ Built for the Playable Factory AI Software Engineer case study. `PROJECT.md` rec
 plan and the reasoning behind each decision; `AI_USAGE.md` records how AI was used,
 including where it was wrong.
 
+## Quick start
+
+Three commands. No Docker, no database to install, no second service.
+
+```bash
+npm install
+npm run setup
+npm run dev
+```
+
+Then open **http://localhost:3000** and click **User** or **Admin** to sign in. No typing
+credentials.
+
+`npm run setup` creates `.env`, generates the JWT and MCP secrets, seeds the two demo
+accounts, and indexes the 142 documents. It takes about half a minute, mostly downloading the
+embedding model once. Running it again is safe: it never overwrites a value you have set.
+
+### The one thing you need to add
+
+Answering questions needs an LLM key. Everything else, search, the dashboard, the MCP server,
+works without one.
+
+Put an [OpenRouter key](https://openrouter.ai/keys) in `.env`:
+
+```bash
+OPENROUTER_API_KEY=sk-or-v1-...
+```
+
+The default models cost very little: `qwen/qwen3.7-flash` answers at $0.03 per million input
+tokens, and the whole 26-case evaluation suite runs for a fraction of a cent.
+
+### Requirements
+
+Node.js 20.11 or newer, and npm. That is all. Embeddings and reranking run locally on the CPU,
+so there is no second API key and no network dependency after the first run.
+
+### Demo accounts
+
+| Role      | Email              | Password        | Can do                                                      |
+| --------- | ------------------ | --------------- | ----------------------------------------------------------- |
+| **User**  | `user@demo.local`  | `demo-user-pw`  | chat and search                                             |
+| **Admin** | `admin@demo.local` | `demo-admin-pw` | everything, plus the dashboard, ingestion, and the MCP page |
+
+The login page has a button for each, so you never have to type them. They are served by the
+API and disappear in a production build, so no bundle ever contains a password.
+
+Sign in as the regular user and try to reach `/dashboard`. You will get a 404, and the API
+answers 403 to a direct call.
+
+### Running the servers
+
+`npm run dev` starts the web app and the API together, with prefixed output, and Ctrl+C stops
+both. To run the MCP server over HTTP as well, in another terminal:
+
+```bash
+npm run dev:mcp     # http://localhost:4100/mcp, OIDC protected
+```
+
+| Service       | URL                         |
+| ------------- | --------------------------- |
+| Web app       | <http://localhost:3000>     |
+| API           | <http://localhost:4000>     |
+| MCP over HTTP | <http://localhost:4100/mcp> |
+
 ## What it does
 
 | Surface        | Who                  | What it does                                                                             |
@@ -58,114 +122,19 @@ Main features:
 
 No Docker, no external database, and only one API key. See the design notes below for why.
 
-## Requirements
-
-- **Node.js 20.11+** (developed on 24)
-- **npm 10+**
-- An **LLM API key**, needed only to generate answers. Ingestion, search, the dashboard,
-  and the MCP server all work without one.
-  One OpenRouter key reaches every model family, so that is the only provider. Get one at
-  <https://openrouter.ai/keys>.
-
-Nothing else. No Docker, no database server, and no embedding provider: embeddings run
-locally.
-
-## Installation
-
-```bash
-git clone <this repository>
-cd playablefactory_ai_case
-npm install
-```
-
-`npm install` also compiles the shared workspace packages, via npm's `prepare`
-lifecycle. The API, web app, and MCP server all import `@corpus/shared` and
-`@corpus/rag` by package name, so those have to be built before anything can run.
-You should not need to think about it, but if you ever see
-`Cannot find module '@corpus/rag'`, `npm run build` is the fix.
-
-Then create your environment file:
-
-```bash
-cp .env.example .env
-```
-
-Open `.env` and set two things:
-
-1. **`OPENROUTER_API_KEY`**. Your key from <https://openrouter.ai/keys>; they start with
-   `sk-or-`. Leave it empty to run everything except answer generation.
-2. **`JWT_ACCESS_SECRET` and `JWT_REFRESH_SECRET`**. These have no defaults on purpose; a
-   fallback secret is a vulnerability that boots successfully. Generate them with:
-
-   ```bash
-   node -e "console.log(require('crypto').randomBytes(48).toString('base64url'))"
-   ```
-
-   The two must differ. If they matched, a refresh token could be replayed as an access
-   token, and the API refuses to start.
-
-### Seed the demo accounts and build the index
-
-```bash
-npm run seed      # creates the two demo users
-npm run ingest    # indexes corpus/ (142 documents, about 30 seconds)
-```
-
-The first ingestion downloads the embedding model (~35 MB) and caches it in `.models/`.
-After that everything runs offline, and a re-run with no changes finishes in well under a
-second.
-
-> **If `npm install` warns about blocked install scripts:** npm 12 blocks lifecycle scripts
-> by default, so `onnxruntime-node`'s postinstall does not run. Everything still works.
-> This was verified, not assumed, because the packages ship prebuilt binaries. No action
-> needed.
-
-## Running the application
-
-Two servers. Either run both at once. Output from each is prefixed, and Ctrl+C stops both:
-
-```bash
-npm run dev
-```
-
-or in separate terminals, if you prefer unmixed logs:
-
-```bash
-npm run dev --workspace=@corpus/api   # http://localhost:4000
-npm run dev --workspace=@corpus/web   # http://localhost:3000
-```
-
-Open **http://localhost:3000** and sign in.
-
-### Demo credentials
-
-| Role      | Email              | Password        | Can do                                       |
-| --------- | ------------------ | --------------- | -------------------------------------------- |
-| **User**  | `user@demo.local`  | `demo-user-pw`  | chat, search                                 |
-| **Admin** | `admin@demo.local` | `demo-admin-pw` | everything, plus the dashboard and ingestion |
-
-The login page has **one-click buttons for both accounts**, so you never have to type them.
-They are driven by `GET /auth/demo-accounts`, which returns an empty list when
-`NODE_ENV=production`. The gate is server-side rather than a flag in the client, because a
-client-side flag still ships the credentials inside the JavaScript bundle where anyone can
-read them, whether the buttons render or not. Verified: a production build of the web app
-contains neither address nor password. The endpoint reads the same `SEED_*` variables the
-seed script does, so the buttons cannot drift from the accounts that actually exist.
-
-Sign in as the regular user first and try to reach `/dashboard`. You will get a 404, and
-the API answers 403 to a direct call. Change the passwords via `SEED_*` in `.env` and re-run
-`npm run seed`.
-
 ## Other commands
 
 | Command                                 | What it does                                                       |
 | --------------------------------------- | ------------------------------------------------------------------ |
+| `npm run setup`                         | Create `.env`, generate secrets, seed accounts, index the corpus   |
 | `npm run ingest`                        | Index the corpus; incremental after the first run                  |
 | `npm run ingest -- --force`             | Re-embed everything (needed after a chunking change)               |
 | `npm run eval`                          | Score retrieval, write `docs/eval-results.md`, no API key needed   |
 | `npm run eval -- --answers`             | Also generate answers for each case (calls the model, costs money) |
 | `npm test`                              | Run the test suites (56 tests)                                     |
 | `npm run typecheck` / `lint` / `format` | The three checks every commit must pass                            |
+| `npm run eval:answers -- --judge`       | Score answer quality, with a judge model                           |
+| `npm run dev:mcp`                       | Start the OIDC-protected MCP server over HTTP                      |
 | `npm run smoke --workspace=@corpus/mcp` | Connect an MCP client to the server and call the tool              |
 
 ## API documentation

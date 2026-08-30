@@ -28,6 +28,21 @@ export interface CreateChatModelOptions {
 }
 
 /**
+ * Whether a key is real, as opposed to absent or still the placeholder from
+ * `.env.example`.
+ *
+ * A placeholder is truthy, so without this check it gets sent to OpenRouter and
+ * comes back as "the API key was rejected". That is a worse message than "the
+ * key is not set": it sends the reader looking for a bad key rather than a
+ * missing one.
+ */
+function isUsableKey(key: string | undefined): key is string {
+  if (!key) return false;
+  const trimmed = key.trim().replace(/^['"]|['"]$/g, '');
+  return trimmed !== '' && !trimmed.endsWith('...') && trimmed.length >= 20;
+}
+
+/**
  * Resolves the `LLM_PROVIDER` and `LLM_MODEL` settings to an implementation.
  *
  * OpenRouter is the only provider, deliberately. One key already reaches every
@@ -38,7 +53,7 @@ export interface CreateChatModelOptions {
  */
 export function createChatModel(options: CreateChatModelOptions): ChatModel {
   if (options.provider === 'openrouter') {
-    if (!options.openRouterApiKey) {
+    if (!isUsableKey(options.openRouterApiKey)) {
       throw new ChatModelConfigurationError(
         'OPENROUTER_API_KEY is not set. Add it to .env to generate answers: keys start with ' +
           '"sk-or-" and come from https://openrouter.ai/keys. Search, ingestion, the dashboard, ' +
