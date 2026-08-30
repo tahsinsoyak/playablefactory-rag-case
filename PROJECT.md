@@ -190,7 +190,23 @@ from.
 
 Each milestone ends in a working state and its own commit or commits.
 
-- [ ] **M0 — Foundation.** Repo, workspaces, TypeScript project references, ESLint + Prettier, `.gitignore`, `.env.example`, this document. _Done when:_ `npm run typecheck` passes across all workspaces.
+- [x] **M0 — Foundation.** Repo, workspaces, TypeScript project references, ESLint + Prettier, `.gitignore`, `.env.example`, this document. _Done when:_ `npm run typecheck` passes across all workspaces. **Done** — typecheck, lint, and format all pass, and the two native risks below were retired before anything was built on them.
+
+  Spikes run during M0, so the storage and embedding choices rest on evidence rather than
+  expectation:
+
+  | Checked                                                      | Result                                                             |
+  | ------------------------------------------------------------ | ------------------------------------------------------------------ |
+  | `better-sqlite3` + `sqlite-vec` install on Windows / Node 24 | Prebuilt binaries, 3 s, no compiler needed                         |
+  | `vec0` KNN, FTS5 BM25, and both written in one transaction   | All work (sqlite 3.53.4, vec v0.1.9)                               |
+  | `bge-small-en-v1.5` locally via transformers.js              | 384 dims, 26 ms for 3 texts; relevant pair 0.75 vs irrelevant 0.50 |
+
+  Two findings carried forward: FTS5's default tokenizer keeps `LumenSDK` as one token, so
+  a keyword search for `lumen` will not match it — the identifier-heavy corpus may need a
+  tokenizer setting, to be tuned against the eval in M3. And npm 12 blocks install scripts
+  by default, which stops `onnxruntime-node`'s postinstall; embeddings still work, but the
+  README must say so.
+
 - [ ] **M1 — Auth spine.** SQLite schema and migrations, seed script with demo `user` and `admin`, argon2id hashing, login/logout/refresh, `requireAuth` and `requireRole`. _Done when:_ a regular user gets 403 from an admin route, proven by a test.
 - [ ] **M2 — Ingestion.** Corpus loader, metadata extraction, heading-aware chunker, local embedder, writes to the vec and FTS indexes in one transaction, incremental by `content_hash`, `ingestion_runs` recorded. _Done when:_ `npm run ingest` indexes 142 documents and re-running it reports zero changes instead of re-embedding.
 - [ ] **M3 — Retrieval and RAG.** Vector search, BM25 search, RRF fusion, `POST /search`, `POST /answer` streaming from `claude-opus-5` with citations and a refusal path. _Done when:_ all five sample questions cite the expected document and an out-of-corpus question refuses cleanly.
